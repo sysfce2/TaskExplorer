@@ -118,7 +118,7 @@ int main(int argc, char *argv[])
 			QDir().rename(OldPath, NewPath + "/TaskExplorer");
 		}
 	}
-	theConf = new CSettings(AppDir, "Xanasoft", "TaskExplorer");
+	theConf = new CSettings(AppDir, "TaskExplorer", "Xanasoft");
 
 	InitPH(bSvc);
 
