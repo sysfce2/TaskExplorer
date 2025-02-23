@@ -100,13 +100,13 @@ void CMemoryModel::UpdateMemory(const CMemoryPtr& pMemory, SMemoryNode* pNode, Q
 
 	if (pNode->iColor != RowColor) {
 		pNode->iColor = RowColor;
-		pNode->Color = CTaskExplorer::GetListColor(RowColor);
+		pNode->Values[0].Color = CTaskExplorer::GetListColor(RowColor);
 		Changed = 2;
 	}
 
 	for(int section = 0; section < columnCount(); section++)
 	{
-		if (!m_Columns.contains(section))
+		if (m_ColumnsOff.contains(section))
 			continue; // ignore columns which are hidden
 
 		QVariant Value;
@@ -142,7 +142,7 @@ void CMemoryModel::UpdateMemory(const CMemoryPtr& pMemory, SMemoryNode* pNode, Q
 
 			switch (section)
 			{
-				case eBaseAddress:			ColValue.Formated = FormatAddress(Value.toULongLong()); break;	
+				case eBaseAddress:			ColValue.Formatted = FormatAddress(Value.toULongLong()); break;	
 
 				case eSize:
 
@@ -154,11 +154,11 @@ void CMemoryModel::UpdateMemory(const CMemoryPtr& pMemory, SMemoryNode* pNode, Q
 
 				case eCommitted:
 				case ePrivate:		
-											ColValue.Formated = FormatSize(Value.toULongLong()); break;	
+											ColValue.Formatted = FormatSize(Value.toULongLong()); break;	
 
-				case eSigningLevel:			ColValue.Formated = pWinMemory->GetSigningLevelString(); break;
-				case eProtection:			ColValue.Formated = pMemory->GetProtectionString(); break;
-				case eOriginalProtection:	ColValue.Formated = pMemory->GetAllocProtectionString(); break;
+				case eSigningLevel:			ColValue.Formatted = pWinMemory->GetSigningLevelString(); break;
+				case eProtection:			ColValue.Formatted = pMemory->GetProtectionString(); break;
+				case eOriginalProtection:	ColValue.Formatted = pMemory->GetAllocProtectionString(); break;
 			}
 		}
 

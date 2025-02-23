@@ -12,6 +12,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - updated code to be qt6 comaptible
 - greately improved dark mode
 - improved driver statis information on startup
+- updated MiscHelpers.dll, improved finder
 
 ### Fixed
 - fixed Closing System Info closes also the TaskExplorer [#34](https://github.com/DavidXanatos/TaskExplorer/issues/34)

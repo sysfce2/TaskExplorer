@@ -53,7 +53,7 @@ void CHeapModel::Sync(QMap<quint64, CHeapPtr> List)
 
 		for(int section = 0; section < columnCount(); section++)
 		{
-			if (!m_Columns.contains(section))
+			if (m_ColumnsOff.contains(section))
 				continue; // ignore columns which are hidden
 
 			QVariant Value;
@@ -78,14 +78,14 @@ void CHeapModel::Sync(QMap<quint64, CHeapPtr> List)
 
 				switch (section)
 				{
-					case eAddress:	ColValue.Formated = FormatAddress(Value.toULongLong()); break;
+					case eAddress:	ColValue.Formatted = FormatAddress(Value.toULongLong()); break;
 					case eUsed:
 					case eCommited:
-									ColValue.Formated = FormatSize(Value.toULongLong()); break;	
-					case eEntries:	ColValue.Formated = FormatNumber(Value.toULongLong()); break;
-					case eFlags:	ColValue.Formated = pHeap->GetFlagsString(); break;
-					case eClass:	ColValue.Formated = pHeap->GetClassString(); break;
-					case eType:		ColValue.Formated = pHeap->GetTypeString(); break;
+									ColValue.Formatted = FormatSize(Value.toULongLong()); break;	
+					case eEntries:	ColValue.Formatted = FormatNumber(Value.toULongLong()); break;
+					case eFlags:	ColValue.Formatted = pHeap->GetFlagsString(); break;
+					case eClass:	ColValue.Formatted = pHeap->GetClassString(); break;
+					case eType:		ColValue.Formatted = pHeap->GetTypeString(); break;
 				}
 			}
 

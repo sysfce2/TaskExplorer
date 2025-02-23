@@ -602,8 +602,12 @@ void CTokenView::UpdateGeneral()
 	m_pGroups->setHidden(m_pGroups->childCount() == 0);
 	m_pRestrictingSIDs->setHidden(m_pRestrictingSIDs->childCount() == 0);
 
-	if (m_pFinder->GetRegExp().isValid())
-		SetFilter(m_pFinder->GetRegExp());
+	CPanelWidgetEx::ApplyFilter(m_pTokenList, m_pFinder->isVisible() ? &m_pFinder->GetSearchExp() : NULL);
+}
+
+void CTokenView::SetFilter(const QRegularExpression& Exp, int iOptions, int Col)
+{
+	CPanelWidgetEx::ApplyFilter(m_pTokenList, &Exp);
 }
 
 void CTokenView::UpdateAdvanced()
@@ -977,9 +981,4 @@ void CTokenView::OnLinkedToken()
 		pTokenView->ShowToken(pLinkedToken);
 		pTaskInfoWindow->show();
 	}
-}
-
-void CTokenView::SetFilter(const QRegularExpression& Exp, bool bHighLight, int Col)
-{
-	CPanelWidgetEx::ApplyFilter(m_pTokenList, Exp/*, bHighLight, Col*/);
 }

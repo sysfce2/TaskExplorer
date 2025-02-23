@@ -78,6 +78,9 @@
         <file alias="Computer">Actions/computer.png</file>
         <file alias="MonitorDbg">Actions/log.png</file>
         <file alias="MonitorSys">Actions/sys_mon.png</file>
+        <file alias="CaseSensitive">Actions/CaseSensitive.png</file>
+        <file alias="Highlight">Actions/Highlight.png</file>
+        <file alias="RegExp">Actions/RegExp.png</file>
     </qresource>
     <qresource prefix="/NtObjects">
         <file alias="Device">NtObjects/device16.png</file>

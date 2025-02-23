@@ -91,7 +91,7 @@ QSet<quint64> CModuleModel::Sync(const QMap<quint64, CModulePtr>& ModuleList)
 		CProcessPtr pProcess = (!m_bTree) ? pModule->GetProcess().staticCast<CProcessInfo>() : NULL;
 
 		// Note: icons are loaded asynchroniusly
-		if (m_bUseIcons && !pNode->Icon.isValid() && m_Columns.contains(eModule))
+		if (m_bUseIcons && !pNode->Icon.isValid() && !m_ColumnsOff.contains(eModule))
 		{
 			QPixmap Icon;
 			if (!pProcess)
@@ -117,7 +117,7 @@ QSet<quint64> CModuleModel::Sync(const QMap<quint64, CModulePtr>& ModuleList)
 
 		for(int section = 0; section < columnCount(); section++)
 		{
-			if (!m_Columns.contains(section))
+			if (m_ColumnsOff.contains(section))
 				continue; // ignore columns which are hidden
 
 			QVariant Value;
@@ -172,28 +172,28 @@ QSet<quint64> CModuleModel::Sync(const QMap<quint64, CModulePtr>& ModuleList)
 
 				switch (section)
 				{
-					case eModule:			if (!pProcess.isNull()) ColValue.Formated = tr("%1 (%2)").arg(pProcess.isNull() ? tr("Unknown process") : pProcess->GetName()).arg(theGUI->FormatID(pProcess->GetProcessId())); break;
+					case eModule:			if (!pProcess.isNull()) ColValue.Formatted = tr("%1 (%2)").arg(pProcess.isNull() ? tr("Unknown process") : pProcess->GetName()).arg(theGUI->FormatID(pProcess->GetProcessId())); break;
 					case eBaseAddress:
 					case eParentBaseAddress:
 #ifdef WIN32
 					case eEntryPoint:
 #endif
-											ColValue.Formated = FormatAddress(ColValue.Raw.toULongLong()); break;
+											ColValue.Formatted = FormatAddress(ColValue.Raw.toULongLong()); break;
 					case eSize:
 					case eFileSize:			
-											ColValue.Formated = FormatSize(ColValue.Raw.toULongLong()); break;
+											ColValue.Formatted = FormatSize(ColValue.Raw.toULongLong()); break;
 #ifdef WIN32
 					case eTimeStamp:
 					case eLoadTime:
 #endif
-					case eFileModifiedTime:	ColValue.Formated = QDateTime::fromSecsSinceEpoch(ColValue.Raw.toULongLong()).toString("dd.MM.yyyy hh:mm:ss"); break;
+					case eFileModifiedTime:	ColValue.Formatted = QDateTime::fromSecsSinceEpoch(ColValue.Raw.toULongLong()).toString("dd.MM.yyyy hh:mm:ss"); break;
 
 #ifdef WIN32
-					case eImageCoherency:	ColValue.Formated = pWinModule->GetImageCoherencyString(); break;
-					case eArchitecture:		ColValue.Formated = pWinModule->GetImageMachineString(); break;
-					//case eEnclaveType:		ColValue.Formated = pWinModule->GetEnclaveType() == 0 ? "" : pWinModule->GetEnclaveTypeString(); break;
-					//case eEnclaveBaseAddress:ColValue.Formated = pWinModule->GetEnclaveType() == 0 ? "" : FormatAddress(ColValue.Raw.toULongLong()); break;
-					//case eEnclaveSize:		ColValue.Formated = pWinModule->GetEnclaveType() == 0 ? "" : FormatSize(ColValue.Raw.toULongLong()); break;
+					case eImageCoherency:	ColValue.Formatted = pWinModule->GetImageCoherencyString(); break;
+					case eArchitecture:		ColValue.Formatted = pWinModule->GetImageMachineString(); break;
+					//case eEnclaveType:		ColValue.Formatted = pWinModule->GetEnclaveType() == 0 ? "" : pWinModule->GetEnclaveTypeString(); break;
+					//case eEnclaveBaseAddress:ColValue.Formatted = pWinModule->GetEnclaveType() == 0 ? "" : FormatAddress(ColValue.Raw.toULongLong()); break;
+					//case eEnclaveSize:		ColValue.Formatted = pWinModule->GetEnclaveType() == 0 ? "" : FormatSize(ColValue.Raw.toULongLong()); break;
 #endif
 				}
 			}
@@ -257,7 +257,7 @@ void CModuleModel::Sync(const CWinModule* pModule, QList<QVariant> Path, QSet<qu
 
 		for(int section = 0; section < columnCount(); section++)
 		{
-			if (!m_Columns.contains(section))
+			if (m_ColumnsOff.contains(section))
 				continue; // ignore columns which are hidden
 
 			QVariant Value;
@@ -278,7 +278,7 @@ void CModuleModel::Sync(const CWinModule* pModule, QList<QVariant> Path, QSet<qu
 				switch (section)
 				{
 				case eBaseAddress:
-					ColValue.Formated = FormatAddress(ColValue.Raw.toULongLong()); break;
+					ColValue.Formatted = FormatAddress(ColValue.Raw.toULongLong()); break;
 				}
 			}
 

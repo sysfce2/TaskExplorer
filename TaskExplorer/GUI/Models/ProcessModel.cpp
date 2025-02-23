@@ -20,7 +20,12 @@ CProcessModel::CProcessModel(QObject *parent)
 	m_bUseIcons = true;
 	m_iUseDescr = 1;
 
-	m_Columns.insert(eProcess);
+	for (int i = 0; i < columnCount(); i++)
+	{
+		if(i == eProcess)
+			continue;
+		m_ColumnsOff.insert(i);
+	}
 }
 
 CProcessModel::~CProcessModel()
@@ -86,8 +91,8 @@ QSet<quint64> CProcessModel::Sync(QMap<quint64, CProcessPtr> ProcessList)
 	bool IsMonitoringETW = ((CWindowsAPI*)theAPI)->IsMonitoringETW();
 #endif
 
-	bool bGpuStats = m_Columns.contains(eGPU_History) || m_Columns.contains(eVMEM_History)
-		|| m_Columns.contains(eGPU_Usage) || m_Columns.contains(eGPU_Shared) || m_Columns.contains(eGPU_Dedicated) || m_Columns.contains(eGPU_Adapter);
+	bool bGpuStats = !m_ColumnsOff.contains(eGPU_History) || !m_ColumnsOff.contains(eVMEM_History)
+		|| !m_ColumnsOff.contains(eGPU_Usage) || !m_ColumnsOff.contains(eGPU_Shared) || !m_ColumnsOff.contains(eGPU_Dedicated) || !m_ColumnsOff.contains(eGPU_Adapter);
 
 	QVector<QList<QPair<quint64, SProcessNode*> > > Highlights;
 	if(iHighlightMax > 0)
@@ -175,7 +180,8 @@ QSet<quint64> CProcessModel::Sync(QMap<quint64, CProcessPtr> ProcessList)
 
 		if (pNode->iColor != RowColor) {
 			pNode->iColor = RowColor;
-			pNode->Color = CTaskExplorer::GetListColor(RowColor);
+			for (int i = 0; i < columnCount(); i++)
+				pNode->Values[i].Color = CTaskExplorer::GetListColor(RowColor);
 			Changed = 2;
 		}
 
@@ -196,7 +202,7 @@ QSet<quint64> CProcessModel::Sync(QMap<quint64, CProcessPtr> ProcessList)
 
 		for(int section = 0; section < columnCount(); section++)
 		{
-			if (!m_Columns.contains(section))
+			if (m_ColumnsOff.contains(section))
 				continue; // ignore columns which are hidden
 
 			quint64 CurIntValue = -1;
@@ -471,25 +477,25 @@ QSet<quint64> CProcessModel::Sync(QMap<quint64, CProcessPtr> ProcessList)
 					case ePID:				
 					case eParentPID:
 					case eConsolePID:
-											if (Value.toLongLong() < 0) ColValue.Formated = ""; 
-											else ColValue.Formated = theGUI->FormatID(Value.toLongLong()); 
+											if (Value.toLongLong() < 0) ColValue.Formatted = ""; 
+											else ColValue.Formatted = theGUI->FormatID(Value.toLongLong()); 
 											break;
-					case eStartKey:			ColValue.Formated = tr("0x%1").arg(Value.toULongLong(), 0, 16); break;
+					case eStartKey:			ColValue.Formatted = tr("0x%1").arg(Value.toULongLong(), 0, 16); break;
 					case eCPU:
 											if(!bClearZeros || Value.toDouble() > 0.00004)
 											{
 												QString ValueStr = QString::number(Value.toDouble()*100, 10, 2) + "%"; 
 												if(bShowMaxThread)
 													ValueStr += " / " + QString::number(CpuStats2.CpuUsage*100, 10, 2) + "%"; 
-												ColValue.Formated = ValueStr;
+												ColValue.Formatted = ValueStr;
 											}
 											else
-												ColValue.Formated = "";
+												ColValue.Formatted = "";
 											break;
 
 
 					case eGPU_Usage:
-											ColValue.Formated = (!bClearZeros || Value.toDouble() > 0.00004) ? QString::number(Value.toDouble()*100, 10, 2) + "%" : ""; break;
+											ColValue.Formatted = (!bClearZeros || Value.toDouble() > 0.00004) ? QString::number(Value.toDouble()*100, 10, 2) + "%" : ""; break;
 
 					case eStaus:			ColValue.SortKey = SortKey;	break;
 
@@ -515,31 +521,31 @@ QSet<quint64> CProcessModel::Sync(QMap<quint64, CProcessPtr> ProcessList)
 					case eMaximumWS:
 
 					case eFileSize:
-											ColValue.Formated = FormatSize(Value.toULongLong()); break;
+											ColValue.Formatted = FormatSize(Value.toULongLong()); break;
 
 #ifdef WIN32
-					case eTLS:				ColValue.Formated = pWinProc->GetTlsBitmapCountString(); break;
+					case eTLS:				ColValue.Formatted = pWinProc->GetTlsBitmapCountString(); break;
 
-					case eErrorMode:		ColValue.Formated = pWinProc->GetErrorModeString(); break;
-					case eGrantedAccess:	ColValue.Formated = pWinProc->GetAccessMaskString(); break;
+					case eErrorMode:		ColValue.Formatted = pWinProc->GetErrorModeString(); break;
+					case eGrantedAccess:	ColValue.Formatted = pWinProc->GetAccessMaskString(); break;
 #endif
 
 					// since not all programs use GPU memory, make this value clearable
 					case eGPU_Dedicated:
 					case eGPU_Shared:
-											ColValue.Formated = FormatSizeEx(Value.toULongLong(), bClearZeros); break;
+											ColValue.Formatted = FormatSizeEx(Value.toULongLong(), bClearZeros); break;
 
 					case ePrivateBytesDelta:
 					{
 						qint64 iDelta = Value.toLongLong();
 						if (iDelta < 0)
-							ColValue.Formated = "-" + FormatSize(iDelta * -1);
+							ColValue.Formatted = "-" + FormatSize(iDelta * -1);
 						else if (iDelta > 0)
-							ColValue.Formated = "+" + FormatSize(iDelta);
+							ColValue.Formatted = "+" + FormatSize(iDelta);
 						else if (bClearZeros)
-							ColValue.Formated = QString();
+							ColValue.Formatted = QString();
 						else
-							ColValue.Formated = "0";
+							ColValue.Formatted = "0";
 						break;
 					}
 
@@ -554,7 +560,7 @@ QSet<quint64> CProcessModel::Sync(QMap<quint64, CProcessPtr> ProcessList)
 					case eSends:
 					case eReads:
 					case eWrites:
-										ColValue.Formated = FormatNumber(Value.toULongLong()); break;
+										ColValue.Formatted = FormatNumber(Value.toULongLong()); break;
 
 #ifdef WIN32
 					// since not all programs use GUI resources, make this value clearable
@@ -576,46 +582,46 @@ QSet<quint64> CProcessModel::Sync(QMap<quint64, CProcessPtr> ProcessList)
 					case eSendsDelta:
 					case eReadsDelta:
 					case eWritesDelta:
-											ColValue.Formated = FormatNumberEx(Value.toULongLong(), bClearZeros); break;
+											ColValue.Formatted = FormatNumberEx(Value.toULongLong(), bClearZeros); break;
 
-					case eStartTime:		ColValue.Formated = QDateTime::fromSecsSinceEpoch(Value.toULongLong()/1000).toString("dd.MM.yyyy hh:mm:ss"); break;
+					case eStartTime:		ColValue.Formatted = QDateTime::fromSecsSinceEpoch(Value.toULongLong()/1000).toString("dd.MM.yyyy hh:mm:ss"); break;
 #ifdef WIN32
 					case eTimeStamp:
 #endif
 					case eFileModifiedTime:
-											if (Value.toULongLong() != 0) ColValue.Formated = QDateTime::fromSecsSinceEpoch(Value.toULongLong()).toString("dd.MM.yyyy hh:mm:ss"); break;
+											if (Value.toULongLong() != 0) ColValue.Formatted = QDateTime::fromSecsSinceEpoch(Value.toULongLong()).toString("dd.MM.yyyy hh:mm:ss"); break;
                     case eUpTime:
 #ifdef WIN32
 					case eRunningTime:			
 					case eSuspendedTime:
 #endif
-											ColValue.Formated = (Value.toULongLong() == 0) ? QString() : FormatTime(Value.toULongLong()); break;
+											ColValue.Formatted = (Value.toULongLong() == 0) ? QString() : FormatTime(Value.toULongLong()); break;
 					case eTotalCPU_Time:
 					case eKernelCPU_Time:
 					case eUserCPU_Time:
-											ColValue.Formated = FormatTime(Value.toULongLong()); break;
+											ColValue.Formatted = FormatTime(Value.toULongLong()); break;
 
-					case ePriorityClass:	ColValue.Formated = pProcess->GetPriorityString(); break;
+					case ePriorityClass:	ColValue.Formatted = pProcess->GetPriorityString(); break;
 #ifdef WIN32
-					case ePriorityBoost:	ColValue.Formated = pWinProc->HasPriorityBoost() ? tr("Yes") : ""; break;
+					case ePriorityBoost:	ColValue.Formatted = pWinProc->HasPriorityBoost() ? tr("Yes") : ""; break;
 #endif
-					case eBasePriority:		ColValue.Formated = pProcess->GetBasePriorityString(); break;
-					case ePagePriority:		ColValue.Formated = pProcess->GetPagePriorityString(); break;
-					case eIO_Priority:		ColValue.Formated = pProcess->GetIOPriorityString(); break;
+					case eBasePriority:		ColValue.Formatted = pProcess->GetBasePriorityString(); break;
+					case ePagePriority:		ColValue.Formatted = pProcess->GetPagePriorityString(); break;
+					case eIO_Priority:		ColValue.Formatted = pProcess->GetIOPriorityString(); break;
 #ifdef WIN32
-					case eIntegrity:		ColValue.Formated = pToken ? pToken->GetIntegrityString() : "";  break;
-					case eImageCoherency:	ColValue.Formated = pWinModule ? pWinModule->GetImageCoherencyString() : ""; break;
-					case eCritical:			ColValue.Formated = pWinProc->IsCriticalProcess() ? tr("Critical") : ""; break;
+					case eIntegrity:		ColValue.Formatted = pToken ? pToken->GetIntegrityString() : "";  break;
+					case eImageCoherency:	ColValue.Formatted = pWinModule ? pWinModule->GetImageCoherencyString() : ""; break;
+					case eCritical:			ColValue.Formatted = pWinProc->IsCriticalProcess() ? tr("Critical") : ""; break;
 
-					case ePowerThrottling:	ColValue.Formated = pWinProc->IsPowerThrottled() ? tr("Yes") : ""; break;
+					case ePowerThrottling:	ColValue.Formatted = pWinProc->IsPowerThrottled() ? tr("Yes") : ""; break;
 #endif
-					case eSubsystem:		ColValue.Formated = pProcess->GetSubsystemString(); break;
+					case eSubsystem:		ColValue.Formatted = pProcess->GetSubsystemString(); break;
 #ifdef WIN32
-					case eDPI_Awareness:	ColValue.Formated = pWinProc->GetDPIAwarenessString(); break;
-					case eProtection:		ColValue.Formated = pWinProc->GetProtectionString(); break;
-					case eOS_Context:		ColValue.Formated = pWinProc->GetOsContextString(); break;
+					case eDPI_Awareness:	ColValue.Formatted = pWinProc->GetDPIAwarenessString(); break;
+					case eProtection:		ColValue.Formatted = pWinProc->GetProtectionString(); break;
+					case eOS_Context:		ColValue.Formatted = pWinProc->GetOsContextString(); break;
 #endif
-					case eNetUsage:			ColValue.Formated = pProcess->GetNetworkUsageString(); break;
+					case eNetUsage:			ColValue.Formatted = pProcess->GetNetworkUsageString(); break;
 
 					case eIO_ReadBytes:
 					case eIO_WriteBytes:
@@ -626,7 +632,7 @@ QSet<quint64> CProcessModel::Sync(QMap<quint64, CProcessPtr> ProcessList)
 
 					case eReadBytes:
 					case eWriteBytes:
-												if(Value.type() != QVariant::String) ColValue.Formated = FormatSize(Value.toULongLong()); break; 
+												if(Value.type() != QVariant::String) ColValue.Formatted = FormatSize(Value.toULongLong()); break; 
 
 					case eIO_ReadBytesDelta:
 					case eIO_WriteBytesDelta:
@@ -637,7 +643,7 @@ QSet<quint64> CProcessModel::Sync(QMap<quint64, CProcessPtr> ProcessList)
 
 					case eReadBytesDelta:
 					case eWriteBytesDelta:
-												if(Value.type() != QVariant::String) ColValue.Formated = FormatSizeEx(Value.toULongLong(), bClearZeros); break; 
+												if(Value.type() != QVariant::String) ColValue.Formatted = FormatSizeEx(Value.toULongLong(), bClearZeros); break; 
 
 					case eIO_TotalRate:
 					case eIO_ReadRate:
@@ -649,7 +655,7 @@ QSet<quint64> CProcessModel::Sync(QMap<quint64, CProcessPtr> ProcessList)
 					case eReadRate:
 					case eWriteRate:
 					case eDisk_TotalRate:
-												if(Value.type() != QVariant::String) ColValue.Formated = FormatRateEx(Value.toULongLong(), bClearZeros); break; 
+												if(Value.type() != QVariant::String) ColValue.Formatted = FormatRateEx(Value.toULongLong(), bClearZeros); break; 
 
 
 				}

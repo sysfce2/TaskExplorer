@@ -64,7 +64,7 @@ void CServiceModel::Sync(QMap<QString, CServicePtr> ServiceList)
 
 		// Note: icons are loaded asynchroniusly
 #ifdef WIN32
-		if (m_bUseIcons && !pNode->Icon.isValid() && m_Columns.contains(eService))
+		if (m_bUseIcons && !pNode->Icon.isValid() && !m_ColumnsOff.contains(eService))
 		{
 			QPixmap Icon;
 			if (pWinService->IsDriver())
@@ -101,7 +101,7 @@ void CServiceModel::Sync(QMap<QString, CServicePtr> ServiceList)
 
 		for(int section = 0; section < columnCount(); section++)
 		{
-			if (!m_Columns.contains(section))
+			if (m_ColumnsOff.contains(section))
 				continue; // ignore columns which are hidden
 
 			QVariant Value;
@@ -147,11 +147,11 @@ void CServiceModel::Sync(QMap<QString, CServicePtr> ServiceList)
 
 				switch (section)
 				{
-					case ePID:				if (Value.toLongLong() < 0) ColValue.Formated = ""; 
-											else ColValue.Formated = theGUI->FormatID(Value.toLongLong()); 
+					case ePID:				if (Value.toLongLong() < 0) ColValue.Formatted = ""; 
+											else ColValue.Formatted = theGUI->FormatID(Value.toLongLong()); 
 											break;
 
-					case eService:			ColValue.Formated = pService->GetName(); break;
+					case eService:			ColValue.Formatted = pService->GetName(); break;
 				}
 			}
 

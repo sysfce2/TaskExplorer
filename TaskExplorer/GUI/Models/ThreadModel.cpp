@@ -53,7 +53,7 @@ void CThreadModel::Sync(QMap<quint64, CThreadPtr> ThreadList)
 		int Changed = 0;
 
 		// Note: icons are loaded asynchroniusly
-		if (m_bUseIcons && !pNode->Icon.isValid() && m_Columns.contains(eThread))
+		if (m_bUseIcons && !pNode->Icon.isValid() && !m_ColumnsOff.contains(eThread))
 		{
 			CProcessPtr pProcess = pNode->pThread->GetProcess().staticCast<CProcessInfo>();
 			CModulePtr pModule = pProcess ? pProcess->GetModuleInfo() : CModulePtr();
@@ -92,7 +92,7 @@ void CThreadModel::Sync(QMap<quint64, CThreadPtr> ThreadList)
 
 		for(int section = 0; section < columnCount(); section++)
 		{
-			if (!m_Columns.contains(section))
+			if (m_ColumnsOff.contains(section))
 				continue; // ignore columns which are hidden
 
 			QVariant Value;
@@ -172,65 +172,65 @@ void CThreadModel::Sync(QMap<quint64, CThreadPtr> ThreadList)
 				switch (section)
 				{
 					case eThread:				if (m_bExtThreadId)
-													ColValue.Formated = tr("%1 (%2): %3").arg(pThread->GetName()).arg(theGUI->FormatID(pThread->GetProcessId())).arg(theGUI->FormatID(pThread->GetThreadId()));
+													ColValue.Formatted = tr("%1 (%2): %3").arg(pThread->GetName()).arg(theGUI->FormatID(pThread->GetProcessId())).arg(theGUI->FormatID(pThread->GetThreadId()));
 												else
-													ColValue.Formated = theGUI->FormatID(pThread->GetThreadId());
+													ColValue.Formatted = theGUI->FormatID(pThread->GetThreadId());
 												break;
-					//case eThread:				ColValue.Formated = "0x" + QString::number(pThread->GetThreadId()); break;
-					case eCPU:					ColValue.Formated = (!bClearZeros || CpuStats.CpuUsage > 0.00004) ? QString::number(CpuStats.CpuUsage*100, 10, 2) + "%" : ""; break;
+					//case eThread:				ColValue.Formatted = "0x" + QString::number(pThread->GetThreadId()); break;
+					case eCPU:					ColValue.Formatted = (!bClearZeros || CpuStats.CpuUsage > 0.00004) ? QString::number(CpuStats.CpuUsage*100, 10, 2) + "%" : ""; break;
 
-					case ePriority:				ColValue.Formated = pThread->GetPriorityString(); break;
-					case eBasePriority:			ColValue.Formated = pThread->GetBasePriorityString(); break;
-					case ePagePriority:			ColValue.Formated = pThread->GetPagePriorityString(); break;
-					case eIOPriority:			ColValue.Formated = pThread->GetIOPriorityString(); break;
+					case ePriority:				ColValue.Formatted = pThread->GetPriorityString(); break;
+					case eBasePriority:			ColValue.Formatted = pThread->GetBasePriorityString(); break;
+					case ePagePriority:			ColValue.Formatted = pThread->GetPagePriorityString(); break;
+					case eIOPriority:			ColValue.Formatted = pThread->GetIOPriorityString(); break;
 
-					case eCreated:				ColValue.Formated = QDateTime::fromSecsSinceEpoch(Value.toULongLong()/1000).toString("dd.MM.yyyy hh:mm:ss"); break;
+					case eCreated:				ColValue.Formatted = QDateTime::fromSecsSinceEpoch(Value.toULongLong()/1000).toString("dd.MM.yyyy hh:mm:ss"); break;
 #ifdef WIN32
-					case eType:					ColValue.Formated = pWinThread->GetTypeString(); break;
+					case eType:					ColValue.Formatted = pWinThread->GetTypeString(); break;
 #endif
-					case eState:				ColValue.Formated = pThread->GetStateString(); break;
+					case eState:				ColValue.Formatted = pThread->GetStateString(); break;
 					case eCycles:
 					case eContextSwitches:
-												ColValue.Formated = FormatNumber(Value.toULongLong()); break;
+												ColValue.Formatted = FormatNumber(Value.toULongLong()); break;
 					case eCyclesDelta:
 					case eContextSwitchesDelta:
-												ColValue.Formated = FormatNumberEx(Value.toULongLong(), bClearZeros); break;
+												ColValue.Formatted = FormatNumberEx(Value.toULongLong(), bClearZeros); break;
 #ifdef WIN32
-					case eImpersonation:		ColValue.Formated = pWinThread->GetTokenStateString(); break;
+					case eImpersonation:		ColValue.Formatted = pWinThread->GetTokenStateString(); break;
 
-					case ePendingIRP:			ColValue.Formated = pWinThread->HasPendingIrp() ? tr("Yes") : ""; break;
-					case eFiber:				ColValue.Formated = pWinThread->IsFiber() ? tr("Yes") : ""; break;
-					case ePriorityBoost:		ColValue.Formated = pWinThread->HasPriorityBoost() ? tr("Yes") : ""; break;
-					case eStackUsage:			ColValue.Formated = pWinThread->GetStackUsageString(); break;
-					case ePowerThrottling:		ColValue.Formated = pWinThread->IsPowerThrottled() ? tr("Yes") : ""; break;
+					case ePendingIRP:			ColValue.Formatted = pWinThread->HasPendingIrp() ? tr("Yes") : ""; break;
+					case eFiber:				ColValue.Formatted = pWinThread->IsFiber() ? tr("Yes") : ""; break;
+					case ePriorityBoost:		ColValue.Formatted = pWinThread->HasPriorityBoost() ? tr("Yes") : ""; break;
+					case eStackUsage:			ColValue.Formatted = pWinThread->GetStackUsageString(); break;
+					case ePowerThrottling:		ColValue.Formatted = pWinThread->IsPowerThrottled() ? tr("Yes") : ""; break;
 
-					case eCOM_Apartment:		ColValue.Formated = pWinThread->GetApartmentStateString(); break;
+					case eCOM_Apartment:		ColValue.Formatted = pWinThread->GetApartmentStateString(); break;
 
 					case eIO_Reads:
 					case eIO_Writes:
 					case eIO_Other:
-												ColValue.Formated = FormatNumber(Value.toULongLong()); break;
+												ColValue.Formatted = FormatNumber(Value.toULongLong()); break;
 
 					case eIO_ReadsDelta:
 					case eIO_WritesDelta:
 					case eIO_OtherDelta:
-												ColValue.Formated = FormatNumberEx(Value.toULongLong(), bClearZeros); break;
+												ColValue.Formatted = FormatNumberEx(Value.toULongLong(), bClearZeros); break;
 
 					case eIO_ReadBytes:
 					case eIO_WriteBytes:
 					case eIO_OtherBytes:
-												if(Value.type() != QVariant::String) ColValue.Formated = FormatSize(Value.toULongLong()); break; 
+												if(Value.type() != QVariant::String) ColValue.Formatted = FormatSize(Value.toULongLong()); break; 
 
 					case eIO_ReadBytesDelta:
 					case eIO_WriteBytesDelta:
 					case eIO_OtherBytesDelta:
-												if(Value.type() != QVariant::String) ColValue.Formated = FormatSizeEx(Value.toULongLong(), bClearZeros); break; 
+												if(Value.type() != QVariant::String) ColValue.Formatted = FormatSizeEx(Value.toULongLong(), bClearZeros); break; 
 
 					//case eIO_TotalRate:
 					case eIO_ReadRate:
 					case eIO_WriteRate:
 					case eIO_OtherRate:
-												if(Value.type() != QVariant::String) ColValue.Formated = FormatRateEx(Value.toULongLong(), bClearZeros); break; 
+												if(Value.type() != QVariant::String) ColValue.Formatted = FormatRateEx(Value.toULongLong(), bClearZeros); break; 
 #endif
 				}
 			}

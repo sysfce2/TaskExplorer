@@ -95,6 +95,10 @@ CTaskExplorer::CTaskExplorer(QWidget *parent)
 
 	LoadLanguage();
 
+	CFinder::m_CaseInsensitiveIcon = QIcon(":/Actions/CaseSensitive");
+	CFinder::m_RegExpStrIcon = QIcon(":/Actions/RegExp");
+	CFinder::m_HighlightIcon = QIcon(":/Actions/Highlight");
+
 	CSystemAPI::InitAPI();
 
 	QString appTitle = tr("TaskExplorer v%1").arg(GetVersion());

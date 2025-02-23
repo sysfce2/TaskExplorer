@@ -104,7 +104,7 @@ void CNtObjectModel::FillNode(const struct SNtObjectInfo* pNtObject, SNtObjectNo
 	if (pNtObject->Type == "Directory")
 	{
 		pChildNode->Values[eType].Raw = QVariant(); // sort directories first
-		pChildNode->Values[eType].Formated = pNtObject->Type;
+		pChildNode->Values[eType].Formatted = pNtObject->Type;
 	}
 	else
 	{
@@ -151,7 +151,7 @@ void CNtObjectModel::fetchMore(const QModelIndex &parent)
 	{
 		beginInsertRows(parent, 0, FoundObjects.size()-1);
 		for(QMap<QList<QVariant>, QList<STreeNode*> >::const_iterator I = New.begin(); I != New.end(); I++)
-			Fill(m_Root, QModelIndex(), I.key(), 0, I.value(), I.key(), NULL);
+			Fill(m_Root, /*QModelIndex(),*/ I.key(), 0, I.value(), NULL);
 		endInsertRows();
 	}
 }
