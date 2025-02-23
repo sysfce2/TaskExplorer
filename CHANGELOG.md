@@ -3,6 +3,16 @@ All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
 
+
+## [1.6.2] - 2025-02-??
+
+
+### Fixed
+- incompatybility witn windows 7 introduced in 1.16.1
+- 
+
+
+
 ## [1.6.1] - 2025-02-23
 
 ### Added
