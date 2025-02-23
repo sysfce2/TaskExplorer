@@ -737,14 +737,20 @@ STATUS InitKSI(const QString& AppDir)
 	// if the file name is not a full path Add the application directory
 	if (!FileName.contains("\\")) 
 	{
-		USHORT ProcessMachine = 0xFFFF;
-		USHORT NativeMachine = 0xFFFF;
-		BOOL ok = IsWow64Process2(GetCurrentProcess(), &ProcessMachine, &NativeMachine);
+		FileName = AppDir + "\\" + FileName;
 
-		if (NativeMachine == IMAGE_FILE_MACHINE_ARM64)
-			FileName = Split2(AppDir, "\\", true).first + "\\ARM64\\"+ FileName;
-		else
-			FileName = AppDir + "\\" + FileName;
+		HMODULE Kernel32 = GetModuleHandleW(L"Kernel32.dll");
+		typedef BOOL(WINAPI* LPFN_ISWOW64PROCESS2)(HANDLE, PUSHORT, PUSHORT);
+		LPFN_ISWOW64PROCESS2 pIsWow64Process2 = (LPFN_ISWOW64PROCESS2)GetProcAddress(Kernel32, "IsWow64Process2");
+		if (pIsWow64Process2)
+		{
+			USHORT ProcessMachine = 0xFFFF;
+			USHORT NativeMachine = 0xFFFF;
+			BOOL ok = pIsWow64Process2(GetCurrentProcess(), &ProcessMachine, &NativeMachine);
+
+			if (NativeMachine == IMAGE_FILE_MACHINE_ARM64)
+				FileName = Split2(AppDir, "\\", true).first + "\\ARM64\\" + FileName;
+		}
 	}
 
 	FileName = FileName.replace("/", "\\");
