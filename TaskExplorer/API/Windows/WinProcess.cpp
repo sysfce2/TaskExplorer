@@ -604,6 +604,16 @@ bool CWinProcess::InitStaticData(bool bLoadFileName)
 		}
 	}
 
+	// codepage, very slow on win 10 !!!
+	if (m->IsHandleVmRead)
+	{
+		USHORT codePage;
+		if (NT_SUCCESS(PhGetProcessCodePage(m->QueryHandle, &codePage)))
+		{
+			m->CodePage = codePage;
+		}
+	}
+
 	// WSL
 	if (WindowsVersion >= WINDOWS_10_22H2 && m->QueryHandle)
 	{
@@ -1074,13 +1084,6 @@ bool CWinProcess::UpdateDynamicData(struct _SYSTEM_PROCESS_INFORMATION* Process,
 
 		if (m->IsHandleVmRead)
 		{
-			USHORT codePage;
-			if (NT_SUCCESS(PhGetProcessCodePage(m->QueryHandle, &codePage)))
-			{
-				m->CodePage = codePage;
-			}
-
-
 			ULONG bitmapCount;
 			ULONG bitmapExpansionCount;
 			if (NT_SUCCESS(PhGetProcessTlsBitMapCounters(m->QueryHandle, &bitmapCount, &bitmapExpansionCount)))

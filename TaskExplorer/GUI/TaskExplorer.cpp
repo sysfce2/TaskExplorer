@@ -306,6 +306,7 @@ CTaskExplorer::CTaskExplorer(QWidget *parent)
 		//m_pMenuDriverConf->setEnabled(!PhIsExecutingInWow64());
 
 		m_pMenuUseDriver = m_pMenuOptions->addAction(tr("Use Driver"), this, SLOT(OnUseDriver()));
+		m_pMenuUseDriver->setEnabled(theAPI->RootAvaiable());
 		m_pMenuUseDriver->setCheckable(true);
 		m_pMenuUseDriver->setChecked(theConf->GetBool("OptionsKSI/KsiEnable", true));
 

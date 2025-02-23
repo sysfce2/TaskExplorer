@@ -48,6 +48,10 @@ struct SSymbolProvider
 			PhDereferenceObject(SymbolProvider);
 			SymbolProvider = NULL;
 		}
+		if (ThreadHandle) {
+			NtClose(ThreadHandle);
+			ThreadHandle = NULL;
+		}
 	}
 
 	HANDLE ProcessId;
@@ -438,33 +442,36 @@ void CStackProviderJob::Run(struct SSymbolProvider* m)
 
 	m_StackTrace = CStackTracePtr(new CStackTrace(m_ProcessId, m_ThreadId));
 
-	NTSTATUS status;
+	NTSTATUS status = STATUS_SUCCESS;
 	CLIENT_ID clientId;
 
     clientId.UniqueProcess = (HANDLE)m_ProcessId;
     clientId.UniqueThread = (HANDLE)m_ThreadId;
 
+	if (!m->ThreadHandle)
+	{
 	// case PluginThreadStackInitializing:
 #ifdef WIN64
-    HANDLE processHandle;
+		HANDLE processHandle;
 
-    if (NT_SUCCESS(PhOpenProcess(&processHandle, PROCESS_QUERY_LIMITED_INFORMATION, clientId.UniqueProcess)))
-    {
-        PhGetProcessIsWow64(processHandle, &m->IsWow64);
-        NtClose(processHandle);
-    }
+		if (NT_SUCCESS(PhOpenProcess(&processHandle, PROCESS_QUERY_LIMITED_INFORMATION, clientId.UniqueProcess)))
+		{
+			PhGetProcessIsWow64(processHandle, &m->IsWow64);
+			NtClose(processHandle);
+		}
 #endif
 	//
 
-	PhLoadSymbolsThreadProvider(m);
+		PhLoadSymbolsThreadProvider(m);
 
-	if (!NT_SUCCESS(status = PhOpenThread(&m->ThreadHandle, THREAD_QUERY_INFORMATION | THREAD_GET_CONTEXT | THREAD_SUSPEND_RESUME, (HANDLE)m_ThreadId)))
-    {
-        if (KphCommsIsConnected())
-        {
-            status = PhOpenThread(&m->ThreadHandle, THREAD_QUERY_LIMITED_INFORMATION, (HANDLE)m_ThreadId);
-        }
-    }
+		if (!NT_SUCCESS(status = PhOpenThread(&m->ThreadHandle, THREAD_QUERY_INFORMATION | THREAD_GET_CONTEXT | THREAD_SUSPEND_RESUME, (HANDLE)m_ThreadId)))
+		{
+			if (KphCommsIsConnected())
+			{
+				status = PhOpenThread(&m->ThreadHandle, THREAD_QUERY_LIMITED_INFORMATION, (HANDLE)m_ThreadId);
+			}
+		}
+	}
 
 	//case PluginThreadStackBeginDefaultWalkStack:
 	if (theConf->GetBool("Options/DbgTraceDotNet", true))

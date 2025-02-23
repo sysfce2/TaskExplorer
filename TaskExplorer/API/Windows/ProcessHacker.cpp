@@ -1007,6 +1007,82 @@ bool KphGetSystemMon()
 	return false;
 }
 
+static PPH_STRING KsiKernelFileName = NULL;
+static PPH_STRING KsiKernelVersion = NULL;
+
+PPH_STRING KsiGetKernelFileNameInternal(VOID)
+{
+	NTSTATUS status;
+	UCHAR buffer[FIELD_OFFSET(RTL_PROCESS_MODULES, Modules) + sizeof(RTL_PROCESS_MODULE_INFORMATION)] = { 0 };
+	PRTL_PROCESS_MODULES modules;
+	ULONG modulesLength;
+
+	modules = (PRTL_PROCESS_MODULES)buffer;
+	modulesLength = sizeof(buffer);
+
+	status = NtQuerySystemInformation(
+		SystemModuleInformation,
+		modules,
+		modulesLength,
+		&modulesLength
+	);
+
+	if (status != STATUS_SUCCESS && status != STATUS_INFO_LENGTH_MISMATCH)
+		return NULL;
+	if (status == STATUS_SUCCESS || modules->NumberOfModules < 1)
+		return NULL;
+
+	return PhConvertUtf8ToUtf16((PCSTR)modules->Modules[0].FullPathName);
+}
+
+PPH_STRING KsiGetKernelFileName(VOID)
+{
+	static PH_INITONCE initOnce = PH_INITONCE_INIT;
+
+	if (PhBeginInitOnce(&initOnce))
+	{
+		KsiKernelFileName = KsiGetKernelFileNameInternal();
+
+		PhEndInitOnce(&initOnce);
+	}
+
+	if (KsiKernelFileName)
+		return (PPH_STRING)PhReferenceObject(KsiKernelFileName);
+
+	return NULL;
+}
+
+PPH_STRING KsiGetKernelVersionString(VOID)
+{
+	static PH_INITONCE initOnce = PH_INITONCE_INIT;
+
+	if (PhBeginInitOnce(&initOnce))
+	{
+		PPH_STRING fileName;
+		PH_IMAGE_VERSION_INFO versionInfo;
+
+		if (fileName = KsiGetKernelFileName())
+		{
+			if (PhInitializeImageVersionInfoEx(&versionInfo, &fileName->sr, FALSE))
+			{
+				KsiKernelVersion = versionInfo.FileVersion;
+
+				versionInfo.FileVersion = NULL;
+				PhDeleteImageVersionInfo(&versionInfo);
+			}
+
+			PhDereferenceObject(fileName);
+		}
+
+		PhEndInitOnce(&initOnce);
+	}
+
+	if (KsiKernelVersion)
+		return (PPH_STRING)PhReferenceObject(KsiKernelVersion);
+
+	return NULL;
+}
+
 void PhShowAbout(QWidget* parent)
 {
 		QString AboutCaption = QString(

@@ -4,9 +4,20 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 
 
+
+## [1.6.1] - 2025-02-??
+
+
 ### Changed
 - updated code to be qt6 comaptible
 - greately improved dark mode
+- improved driver statis information on startup
+
+### Fixed
+- fixed Closing System Info closes also the TaskExplorer [#34](https://github.com/DavidXanatos/TaskExplorer/issues/34)
+- fixed handle leak in thread stack panel
+- fixed bad performance on windows 10
+- fixed issue where two instances were started when "Skip UAC" was enabled
 
 
 

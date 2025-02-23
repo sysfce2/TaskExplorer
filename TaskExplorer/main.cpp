@@ -10,8 +10,9 @@
 #include <codecvt>
 #include "../QtSingleApp/src/qtsingleapplication.h"
 #include "../MiscHelpers/Common/qRC4.h"
+#include "../../MiscHelpers/Common/CheckableMessageBox.h"
 
-bool SkipUacRun(bool test_only = false);
+int SkipUacRun(bool test_only = false);
 #endif
 
 CSettings* theConf = NULL;
@@ -76,10 +77,16 @@ int main(int argc, char *argv[])
     }
 
 #ifdef WIN32
+	bool bTestElevated = false;
 	if (!bSvc && !bWrk && !IsElevated() && !bNoSkip)
 	{
-		if (SkipUacRun()) // Warning: the started process will have lower priority!
+		int ret = SkipUacRun(); // Warning: the started process will have lower priority!
+		if (ret == 1)
 			return 0;
+		if (ret == -1) { // the driver does not allow us the know the state, so we wait a second and check if an other instance has came up
+			bTestElevated = true;
+			QThread::msleep(1000);
+		}
 	}
 #endif
 
@@ -144,15 +151,53 @@ int main(int argc, char *argv[])
 		//QCoreApplication::setAttribute(Qt::AA_DisableHighDpiScaling);
 
 		//new QApplication(argc, argv);
-		pApp = new QtSingleApplication(IsElevated() ? "TaskExplorer" : "UTaskExplorer", argc, argv);
+		pApp = new QtSingleApplication((IsElevated() || bTestElevated) ? "TaskExplorer" : "UTaskExplorer", argc, argv);
 	}
 
-	if (pApp && !theConf->GetBool("Options/AllowMultipleInstances", false) && !bMulti && pApp->sendMessage("ShowWnd"))
-		return 0;
+	if (pApp)
+	{
+		if (bTestElevated && pApp->isClient())
+			return 0;
 
-	if (DrvStatus.IsError()) {
-		if (!CTaskExplorer::CheckErrors(QList<STATUS>() << DrvStatus))
+		if (!theConf->GetBool("Options/AllowMultipleInstances", false) && !bMulti && pApp->sendMessage("ShowWnd"))
+			return 0;
+	}
+
+	if (DrvStatus.IsError())
+	{
+		QString Message;
+		if (DrvStatus.GetStatus() == STATUS_UNKNOWN_REVISION) 
+		{
+			QString windowsVersion = QString::fromWCharArray(WindowsVersionString);
+			QString kernelVersion = CastPhString(KsiGetKernelVersionString());
+
+			Message = CTaskExplorer::tr("The current DynData for the KTaskExplorer driver does not yet supported on your windows kernel version.<br />"
+				"You can check for <a href=\"https://github.com/DavidXanatos/TaskExplorer/releases\">TaskExplorer updates on github</a>, "
+				"or grab the latest ksidyn.bin and ksidyn.sig from <a href=\"https://systeminformer.sourceforge.io/downloads\">the latest SystemInformer</a> "
+				"and put them in the instalaltion directors next to KSystemInformer.sys.<br />"
+				"Instalation Directory: %4<br />"
+				"<br />"
+				"Operating System Details:<br />"
+				"&nbsp;&nbsp;&nbsp;&nbsp;Windows %1<br />"
+				"&nbsp;&nbsp;&nbsp;&nbsp;Windows Kernel %2<br />"
+				"&nbsp;&nbsp;&nbsp;&nbsp;TaskExplorer %3<br />"
+				"<br />"
+				"Do you want to continue anyways?<br />").arg(windowsVersion).arg(kernelVersion).arg(CTaskExplorer::GetVersion()).arg(AppDir);
+		} 
+		else
+			Message = CTaskExplorer::tr("Failed to load KTaskExplorer driver, %1, Error: 0x%2 (%3).\n"
+				"Do you want to continue anyways?").arg(DrvStatus.GetText()).arg((quint32)DrvStatus.GetStatus(), 8, 16, QChar('0')).arg(CastPhString(PhGetNtMessage(DrvStatus.GetStatus())));
+
+		bool State = false;
+		int Ret = CCheckableMessageBox::question(NULL, "TaskExplorer", Message
+			, CTaskExplorer::tr("Disable KTaskExplorer driver. Note: this will limit the aplications functionality!"), &State, 
+			QDialogButtonBox::Ok | QDialogButtonBox::Cancel, QDialogButtonBox::Ok, QMessageBox::Warning);
+
+		if (Ret == QDialogButtonBox::Cancel)
 			return -1;
+
+		if (State)
+			theConf->SetValue("Options/UseDriver", false);
 	}
 
 	QThreadPool::globalInstance()->setMaxThreadCount(theConf->GetInt("Options/MaxThreadPool", 10));
@@ -170,7 +215,7 @@ int main(int argc, char *argv[])
 			Svc.stop();
 		}
 	}
-	else
+	else if(pApp)
 	{
 #ifdef WIN32
 #ifndef WIN64
@@ -222,6 +267,7 @@ int main(int argc, char *argv[])
 #endif
 #endif
 #endif
+		pApp->setQuitOnLastWindowClosed(false);
 
 		new CTaskExplorer();
 		QObject::connect(QtSingleApplication::instance(), SIGNAL(messageReceived(const QString&)), theGUI, SLOT(OnMessage(const QString&)));

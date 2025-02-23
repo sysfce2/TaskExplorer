@@ -108,6 +108,8 @@ bool KphSetDebugLog(bool Enable);
 bool KphSetSystemMon(bool Enable);
 bool KphGetSystemMon();
 
+PPH_STRING KsiGetKernelVersionString(VOID);
+
 void PhShowAbout(QWidget* parent);
 
 #endif
