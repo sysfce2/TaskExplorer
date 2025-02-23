@@ -12,6 +12,7 @@
 
 #include "stdafx.h"
 #include "../../../MiscHelpers/Common/Settings.h"
+#include "../../../MiscHelpers/Common/Common.h"
 #include "ProcessHacker.h"
 #include <kphmsgdyn.h>
 extern "C" {
@@ -316,13 +317,14 @@ static VOID NTAPI KsiCommsCallback(
 }
 
 NTSTATUS KsiReadConfiguration(
-	_In_ PWSTR FileName,
+	const QString &Path,
+	_In_ PCWSTR FileName,
 	_Out_ PBYTE* Data,
 	_Out_ PULONG Length
 )
 {
 	NTSTATUS status;
-	PPH_STRING fileName;
+	//PPH_STRING fileName;
 	HANDLE fileHandle;
 
 	*Data = NULL;
@@ -330,12 +332,14 @@ NTSTATUS KsiReadConfiguration(
 
 	status = STATUS_NO_SUCH_FILE;
 
-	fileName = PhGetApplicationDirectoryFileNameZ(FileName, TRUE);
-	if (fileName)
+	//fileName = PhGetApplicationDirectoryFileNameZ(FileName, TRUE);
+	//if (fileName)
 	{
-		if (NT_SUCCESS(status = PhCreateFile(
+		//if (NT_SUCCESS(status = PhCreateFile(
+		if (NT_SUCCESS(status = PhCreateFileWin32(
 			&fileHandle,
-			&fileName->sr,
+		//	&fileName->sr,
+			(wchar_t*)(Path + "\\" + QString::fromWCharArray(FileName)).utf16(),
 			FILE_GENERIC_READ,
 			FILE_ATTRIBUTE_NORMAL,
 			FILE_SHARE_READ,
@@ -348,7 +352,7 @@ NTSTATUS KsiReadConfiguration(
 			NtClose(fileHandle);
 		}
 
-		PhDereferenceObject(fileName);
+		//PhDereferenceObject(fileName);
 	}
 
 	return status;
@@ -393,6 +397,7 @@ NTSTATUS KsiReadConfiguration(
 }*/
 
 NTSTATUS KsiGetDynData(
+	const QString &Path,
 	_Out_ PBYTE* DynData,
 	_Out_ PULONG DynDataLength,
 	_Out_ PBYTE* Signature,
@@ -410,7 +415,7 @@ NTSTATUS KsiGetDynData(
 	*Signature = NULL;
 	*SignatureLength = 0;
 
-	status = KsiReadConfiguration((PWSTR)L"ksidyn.bin", &data, &dataLength);
+	status = KsiReadConfiguration(Path, L"ksidyn.bin", &data, &dataLength);
 	if (!NT_SUCCESS(status))
 		goto CleanupExit;
 
@@ -418,7 +423,7 @@ NTSTATUS KsiGetDynData(
 	//if (!NT_SUCCESS(status))
 	//	goto CleanupExit;
 
-	status = KsiReadConfiguration((PWSTR)L"ksidyn.sig", &sig, &sigLength);
+	status = KsiReadConfiguration(Path, L"ksidyn.sig", &sig, &sigLength);
 	if (!NT_SUCCESS(status))
 		goto CleanupExit;
 	
@@ -441,8 +446,8 @@ NTSTATUS KsiGetDynData(
 CleanupExit:
 	if (data)
 		PhFree(data);
-	//if (sig)
-	//	PhFree(sig);
+	if (sig)
+		PhFree(sig);
 
 	return status;
 }
@@ -730,8 +735,17 @@ STATUS InitKSI(const QString& AppDir)
 	KsiEnableLoadFilter = theConf->GetBool("OptionsKSI/EnableLoadFilter", false);
 
 	// if the file name is not a full path Add the application directory
-	if (!FileName.contains("\\"))
-		FileName = AppDir + "/" + FileName;
+	if (!FileName.contains("\\")) 
+	{
+		USHORT ProcessMachine = 0xFFFF;
+		USHORT NativeMachine = 0xFFFF;
+		BOOL ok = IsWow64Process2(GetCurrentProcess(), &ProcessMachine, &NativeMachine);
+
+		if (NativeMachine == IMAGE_FILE_MACHINE_ARM64)
+			FileName = Split2(AppDir, "\\", true).first + "\\ARM64\\"+ FileName;
+		else
+			FileName = AppDir + "\\" + FileName;
+	}
 
 	FileName = FileName.replace("/", "\\");
 	if (!QFile::exists(FileName))
@@ -752,7 +766,7 @@ STATUS InitKSI(const QString& AppDir)
 	PBYTE signature = NULL;
 	ULONG signatureLength;
 
-	status = KsiGetDynData(&dynData, &dynDataLength, &signature, &signatureLength);
+	status = KsiGetDynData(Split2(FileName, "\\", true).first, &dynData, &dynDataLength, &signature, &signatureLength);
 	if (!NT_SUCCESS(status)) 
 		return ERR("Unsupported windows version.", STATUS_UNKNOWN_REVISION);
 

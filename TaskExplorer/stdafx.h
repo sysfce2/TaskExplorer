@@ -83,7 +83,6 @@
 #include <QTreeWidget>
 #include <QFormLayout>
 #include <QLineEdit>
-#include <QTextEdit>
 #include <QWidgetAction>
 #include <QCheckBox>
 #include <QScrollArea>
@@ -97,7 +96,6 @@
 #include <QPushButton>
 #include <QSystemTrayIcon>
 #include <QDesktopServices>
-#include <QFileDialog>
 #include <QProgressBar>
 #include <QInputDialog>
 #include <QToolTip>

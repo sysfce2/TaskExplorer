@@ -7,6 +7,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [1.6.1] - 2025-02-??
 
+### Added
+- added ARM64 driver
 
 ### Changed
 - updated code to be qt6 comaptible
