@@ -163,10 +163,18 @@ int main(int argc, char *argv[])
 			return 0;
 	}
 
-	if (DrvStatus.IsError())
+	//DrvStatus = ERR(STATUS_UNKNOWN_REVISION);
+	int DynDataUpdate = 0;
+	while (DrvStatus.IsError() || DynDataUpdate == 2)
 	{
 		QString Message;
-		if (DrvStatus.GetStatus() == STATUS_UNKNOWN_REVISION) 
+		QDialogButtonBox::StandardButtons buttons = QDialogButtonBox::Ok | QDialogButtonBox::Cancel;
+		if (DynDataUpdate == -1)
+		{
+			Message = CTaskExplorer::tr("Failed to update DynData, %1, Error: 0x%2 (%3).\n"
+				"Do you want to continue anyways (Ok), or terminate (Cancel)?").arg(DrvStatus.GetText()).arg((quint32)DrvStatus.GetStatus(), 8, 16, QChar('0')).arg(CastPhString(PhGetNtMessage(DrvStatus.GetStatus())));
+		}
+		else if (DrvStatus.GetStatus() == STATUS_UNKNOWN_REVISION || DynDataUpdate != 0) 
 		{
 			QString windowsVersion = QString::fromWCharArray(WindowsVersionString);
 			QString kernelVersion = CastPhString(KsiGetKernelVersionString());
@@ -181,23 +189,46 @@ int main(int argc, char *argv[])
 				"&nbsp;&nbsp;&nbsp;&nbsp;Windows %1<br />"
 				"&nbsp;&nbsp;&nbsp;&nbsp;Windows Kernel %2<br />"
 				"&nbsp;&nbsp;&nbsp;&nbsp;TaskExplorer %3<br />"
-				"<br />"
-				"Do you want to continue anyways?<br />").arg(windowsVersion).arg(kernelVersion).arg(CTaskExplorer::GetVersion()).arg(AppDir);
+				"<br />").arg(windowsVersion).arg(kernelVersion).arg(CTaskExplorer::GetVersion()).arg(AppDir);
+
+			if (DynDataUpdate == 1)
+				Message += CTaskExplorer::tr("Update did not help, do you want to continue anyways (Ok), or terminate (Cancel)?");
+			else {
+				Message += CTaskExplorer::tr("Do you want to try to download updated DynData (Yes), start without the driver (No), or terminate (Cancel)?");
+				buttons = QDialogButtonBox::Yes | QDialogButtonBox::No | QDialogButtonBox::Cancel;
+			}
 		} 
-		else
+		else {
 			Message = CTaskExplorer::tr("Failed to load KTaskExplorer driver, %1, Error: 0x%2 (%3).\n"
-				"Do you want to continue anyways?").arg(DrvStatus.GetText()).arg((quint32)DrvStatus.GetStatus(), 8, 16, QChar('0')).arg(CastPhString(PhGetNtMessage(DrvStatus.GetStatus())));
+				"Do you want to continue anyways (Ok), or terminate (Cancel)?").arg(DrvStatus.GetText()).arg((quint32)DrvStatus.GetStatus(), 8, 16, QChar('0')).arg(CastPhString(PhGetNtMessage(DrvStatus.GetStatus())));
+		}
 
 		bool State = false;
 		int Ret = CCheckableMessageBox::question(NULL, "TaskExplorer", Message
 			, CTaskExplorer::tr("Disable KTaskExplorer driver. Note: this will limit the aplications functionality!"), &State, 
-			QDialogButtonBox::Ok | QDialogButtonBox::Cancel, QDialogButtonBox::Ok, QMessageBox::Warning);
+			buttons, QDialogButtonBox::Cancel, QMessageBox::Warning);
+
+		if (Ret == QDialogButtonBox::Yes)
+		{
+			DrvStatus = TryUpdateDynData(AppDir);
+			if (DrvStatus.IsError()) {
+				QMessageBox::critical(NULL, "TaskExplorer", CTaskExplorer::tr("Failed to update DynData, %1, Error: 0x%2 (%3).").arg(DrvStatus.GetText()));
+				DynDataUpdate = -1;
+			}
+			else {
+				DynDataUpdate = 1;
+				DrvStatus = InitKSI(AppDir);
+			}
+			continue;
+		}
 
 		if (Ret == QDialogButtonBox::Cancel)
 			return -1;
 
 		if (State)
 			theConf->SetValue("Options/UseDriver", false);
+
+		break;
 	}
 
 	QThreadPool::globalInstance()->setMaxThreadCount(theConf->GetInt("Options/MaxThreadPool", 10));

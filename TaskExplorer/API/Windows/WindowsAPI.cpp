@@ -10,6 +10,7 @@
 #include "Monitors/WinDiskMonitor.h"
 #include "../../SVC/TaskService.h"
 #include "../../MiscHelpers/Common/Settings.h"
+#include "SystemHacker/SystemHacker.h"
 
 extern "C" {
 #include <winsta.h>
@@ -196,11 +197,14 @@ bool CWindowsAPI::Init()
 		NtClose(keyHandle);
 	}
 	
-	//if (!PhIsExecutingInWow64() && theConf->GetBool("Options/UseDriver", true))
-	//{
+#ifdef _DEBUG
+	if (!PhIsExecutingInWow64() && theConf->GetBool("Options/UseHackerDriver", false))
+	{
 	//	QPair<QString, QString> Driver = SellectDriver();
 	//	InitDriver(Driver.first, Driver.second);
-	//}
+		InitHackerDriver();
+	}
+#endif
 
 	static PH_INITONCE initOnce = PH_INITONCE_INIT;
 	if (PhBeginInitOnce(&initOnce))
@@ -359,6 +363,24 @@ bool CWindowsAPI::Init()
 //
 //	return Status;
 //}
+
+STATUS CWindowsAPI::InitHackerDriver()
+{
+	if (KshIsConnected())
+		return OK;
+
+	STATUS Status = InitKSH();
+
+	ULONG Features = 0;
+	if (Status.IsError())
+		qDebug() << Status.GetText();
+	else
+	{
+		KshGetFeatures(&Features);
+	}
+
+	return Status;
+}
 
 CWindowsAPI::~CWindowsAPI()
 {
@@ -776,6 +798,30 @@ void CWindowsAPI::UpdateSambaStats()
 
 		NetApiBufferFree(srvStat);
 	}
+}
+
+bool CWindowsAPI::UpdateAll()
+{
+#ifdef _DEBUG
+	static quint64 start = 0;
+
+	if(start)
+		qDebug() << "time passed since last UpdateAll" << (GetCurCycle() - start) / 1000000.0 << "s";
+
+	start = GetCurCycle();
+#endif
+
+	UpdateProcessList();
+	UpdateSocketList();
+
+	UpdateSysStats();
+
+	UpdateServiceList();
+
+#ifdef _DEBUG
+	qDebug() << "UpdateAll took" << (GetCurCycle() - start) / 1000000.0 << "s";
+#endif
+	return true;
 }
 
 bool CWindowsAPI::UpdateSysStats()

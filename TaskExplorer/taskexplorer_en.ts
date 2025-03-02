@@ -286,6 +286,65 @@
     </message>
 </context>
 <context>
+    <name>CDriverWindow</name>
+    <message>
+        <source>(Auto Selection)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Test Signing Enabled</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Signature Required (CKS Enabled)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Signature Required</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Start</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Not installed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Stop</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disconnect</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Connected</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Install</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Connect</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Error: 0x%1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disconnected</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>N/A</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>CEnvironmentView</name>
     <message>
         <source>Name|Type|Value</source>
@@ -2833,7 +2892,7 @@ Modifiers:<byte value="xd"/>
     </message>
     <message>
         <source></source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>Subsystem: %1</source>
@@ -3277,10 +3336,6 @@ Modifiers:<byte value="xd"/>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Name|Value</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Config</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3306,6 +3361,18 @@ Modifiers:<byte value="xd"/>
     </message>
     <message>
         <source>Write</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Name|Type|Value</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Global</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Template</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -3556,6 +3623,14 @@ To change the limit adjust the option &apos;Options/ResultLimit&apos;.</source>
     <message>
         <source>Linux CPU Usage shows 100% per core, i.e. if a process is using 2 cores to 100% it will show as 200% total cpu usage.<byte value="xd"/>
 PartiallyChecked state means apply only to thread std::list.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Auto Detection</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No Translation</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -4724,23 +4799,11 @@ Please run the 64-bit version of Task Explorer instead.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;h3&gt;About TaskExplorer&lt;/h3&gt;&lt;p&gt;Version %1&lt;/p&gt;&lt;p&gt;by DavidXanatos&lt;/p&gt;&lt;p&gt;Copyright (c) 2019-2025&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;TaskExplorer is a powerfull multi-purpose Task Manager that helps you monitor system resources, debug software and detect malware.&lt;/p&gt;&lt;p&gt;&lt;/p&gt;&lt;p&gt;On Windows TaskExplorer is powered by the ProsessHacker Library.&lt;/p&gt;&lt;p&gt;&lt;/p&gt;&lt;p&gt;Visit &lt;a href=&quot;https://github.com/DavidXanatos/TaskExplorer&quot;&gt;TaskExplorer on github&lt;/a&gt; for more information.&lt;/p&gt;&lt;p&gt;&lt;/p&gt;&lt;p&gt;&lt;/p&gt;&lt;p&gt;&lt;/p&gt;&lt;p&gt;Icons from &lt;a href=&quot;https://icons8.com&quot;&gt;icons8.com&lt;/a&gt;&lt;/p&gt;&lt;p&gt;&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>D: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Processes of the Current User</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Use Driver</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -4772,6 +4835,136 @@ Ram: %2%</source>
     <message>
         <source><byte value="xd"/>
 Swap: %1%</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disable KTaskExplorer driver. Note: this will limit the aplications functionality!</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Updating DynData</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;TaskExplorer is a powerfull multi-purpose Task Manager that helps you monitor system resources, debug software and detect malware.&lt;/p&gt;&lt;p&gt;&lt;/p&gt;&lt;p&gt;On Windows TaskExplorer is powered by the ProsessHacker Library.&lt;/p&gt;&lt;p&gt;&lt;/p&gt;&lt;p&gt;Visit &lt;a href=&quot;https://github.com/DavidXanatos/TaskExplorer&quot;&gt;TaskExplorer on github&lt;/a&gt; for more information.&lt;/p&gt;&lt;p&gt;&lt;/p&gt;&lt;p&gt;Config Dir: %1&lt;/p&gt;&lt;p&gt;&lt;/p&gt;&lt;p&gt;Icons from &lt;a href=&quot;https://icons8.com&quot;&gt;icons8.com&lt;/a&gt;&lt;/p&gt;&lt;p&gt;&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to update DynData, %1, Error: 0x%2 (%3).
+Do you want to continue anyways (Ok), or terminate (Cancel)?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The current DynData for the KTaskExplorer driver does not yet supported on your windows kernel version.&lt;br /&gt;You can check for &lt;a href=&quot;https://github.com/DavidXanatos/TaskExplorer/releases&quot;&gt;TaskExplorer updates on github&lt;/a&gt;, or grab the latest ksidyn.bin and ksidyn.sig from &lt;a href=&quot;https://systeminformer.sourceforge.io/downloads&quot;&gt;the latest SystemInformer&lt;/a&gt; and put them in the instalaltion directors next to KSystemInformer.sys.&lt;br /&gt;Instalation Directory: %4&lt;br /&gt;&lt;br /&gt;Operating System Details:&lt;br /&gt;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;Windows %1&lt;br /&gt;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;Windows Kernel %2&lt;br /&gt;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;TaskExplorer %3&lt;br /&gt;&lt;br /&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Update did not help, do you want to continue anyways (Ok), or terminate (Cancel)?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Do you want to try to download updated DynData (Yes), start without the driver (No), or terminate (Cancel)?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to load KTaskExplorer driver, %1, Error: 0x%2 (%3).
+Do you want to continue anyways (Ok), or terminate (Cancel)?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to update DynData, %1, Error: 0x%2 (%3).</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to open archive.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>DynData not found in archive.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to extreact files.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Updated DynData successfully</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Latest SI build already downloaded</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Downloading latest SI build</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Download Failed, Error: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to open file for writing.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Successfully Downloaded latest SI build</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Update Check Failed, Error: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Update Check Failed, Error: Unrecognized Reply</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Use KSystemInformer</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;h3&gt;About TaskExplorer&lt;/h3&gt;&lt;p&gt;Version %1&lt;/p&gt;&lt;p&gt;Copyright (C) 2019-2025 David Xanatos (xanasoft.com)&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Reset Columns</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Copy Cell</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Copy Row</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Copy Panel</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Case Sensitive</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>RegExp</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Highlight</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Close</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Find ...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>All columns</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -6414,7 +6607,7 @@ A 64-bit dump will be created instead.</source>
     </message>
     <message>
         <source></source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>Unable to change memory protection</source>
@@ -7226,7 +7419,7 @@ A 64-bit dump will be created instead.</source>
     </message>
     <message>
         <source></source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>Not supported type or state</source>
@@ -7510,7 +7703,7 @@ If you save the recovery information using this program, the additional failure 
     </message>
     <message>
         <source></source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>Failed to set Thread priority boost</source>
@@ -8313,6 +8506,14 @@ If you save the recovery information using this program, the additional failure 
     <name>QObject</name>
     <message>
         <source>The kernel driver file &apos;%1&apos; was not found.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The Process Hacker kernel driver &apos;%1&apos; was not found.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unable to load the kernel driver, Error: 0x%1</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

@@ -3347,7 +3347,7 @@ Modifiers:<byte value="xd"/>
     </message>
     <message>
         <source>Name|Value</source>
-        <translation>名称|值</translation>
+        <translation type="vanished">名称|值</translation>
     </message>
     <message>
         <source>Config</source>
@@ -3376,6 +3376,18 @@ Modifiers:<byte value="xd"/>
     <message>
         <source>Write</source>
         <translation>写入</translation>
+    </message>
+    <message>
+        <source>Name|Type|Value</source>
+        <translation type="unfinished">名称|类型|值</translation>
+    </message>
+    <message>
+        <source>Global</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Template</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -3630,6 +3642,14 @@ PartiallyChecked state means apply only to thread std::list.</source>
     <message>
         <source>Binary name only</source>
         <translation>仅二进制名称</translation>
+    </message>
+    <message>
+        <source>Auto Detection</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No Translation</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -4428,7 +4448,7 @@ PartiallyChecked state means apply only to thread std::list.</source>
     </message>
     <message>
         <source>Use Driver</source>
-        <translation>使用驱动程序</translation>
+        <translation type="vanished">使用驱动程序</translation>
     </message>
     <message>
         <source>Auto Run</source>
@@ -4838,11 +4858,11 @@ Swap: %1%</source>
     </message>
     <message>
         <source>&lt;h3&gt;About TaskExplorer&lt;/h3&gt;&lt;p&gt;Version %1&lt;/p&gt;&lt;p&gt;by DavidXanatos&lt;/p&gt;&lt;p&gt;Copyright (c) 2019-2025&lt;/p&gt;</source>
-        <translation>&lt;h3&gt;关于 TaskExplorer&lt;/h3&gt;&lt;p&gt;版本 %1&lt;/p&gt;&lt;p&gt;by DavidXanatos&lt;/p&gt;&lt;p&gt;版权所有 (c) 2019-2025&lt;/p&gt;</translation>
+        <translation type="vanished">&lt;h3&gt;关于 TaskExplorer&lt;/h3&gt;&lt;p&gt;版本 %1&lt;/p&gt;&lt;p&gt;by DavidXanatos&lt;/p&gt;&lt;p&gt;版权所有 (c) 2019-2025&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;TaskExplorer is a powerfull multi-purpose Task Manager that helps you monitor system resources, debug software and detect malware.&lt;/p&gt;&lt;p&gt;&lt;/p&gt;&lt;p&gt;On Windows TaskExplorer is powered by the ProsessHacker Library.&lt;/p&gt;&lt;p&gt;&lt;/p&gt;&lt;p&gt;Visit &lt;a href=&quot;https://github.com/DavidXanatos/TaskExplorer&quot;&gt;TaskExplorer on github&lt;/a&gt; for more information.&lt;/p&gt;&lt;p&gt;&lt;/p&gt;&lt;p&gt;&lt;/p&gt;&lt;p&gt;&lt;/p&gt;&lt;p&gt;Icons from &lt;a href=&quot;https://icons8.com&quot;&gt;icons8.com&lt;/a&gt;&lt;/p&gt;&lt;p&gt;&lt;/p&gt;</source>
-        <translation>&lt;p&gt;TaskExplorer 是一个强大的多功能的，旨在帮助你监视系统资源、调试软件与检测恶意软件的任务管理器。&lt;/p&gt;&lt;p&gt;&lt;/p&gt;&lt;p&gt;在Windows上 TaskExplorer 由 ProsessHacker 链接库 提供支持。&lt;/p&gt;&lt;p&gt;&lt;/p&gt;&lt;p&gt;访问 &lt;a href=&quot;https://github.com/DavidXanatos/TaskExplorer&quot;&gt;TaskExplorer 的 github仓库&lt;/a&gt; 若要获取更多信息。&lt;/p&gt;&lt;p&gt;&lt;/p&gt;&lt;p&gt;&lt;/p&gt;&lt;p&gt;&lt;/p&gt;&lt;p&gt;Icons from &lt;a href=&quot;https://icons8.com&quot;&gt;icons8.com&lt;/a&gt;&lt;/p&gt;&lt;p&gt;&lt;/p&gt;</translation>
+        <translation type="vanished">&lt;p&gt;TaskExplorer 是一个强大的多功能的，旨在帮助你监视系统资源、调试软件与检测恶意软件的任务管理器。&lt;/p&gt;&lt;p&gt;&lt;/p&gt;&lt;p&gt;在Windows上 TaskExplorer 由 ProsessHacker 链接库 提供支持。&lt;/p&gt;&lt;p&gt;&lt;/p&gt;&lt;p&gt;访问 &lt;a href=&quot;https://github.com/DavidXanatos/TaskExplorer&quot;&gt;TaskExplorer 的 github仓库&lt;/a&gt; 若要获取更多信息。&lt;/p&gt;&lt;p&gt;&lt;/p&gt;&lt;p&gt;&lt;/p&gt;&lt;p&gt;&lt;/p&gt;&lt;p&gt;Icons from &lt;a href=&quot;https://icons8.com&quot;&gt;icons8.com&lt;/a&gt;&lt;/p&gt;&lt;p&gt;&lt;/p&gt;</translation>
     </message>
     <message>
         <source>You are attempting to run the 32-bit version of Task Explorer on 64-bit Windows. Most features will not work correctly.
@@ -4851,6 +4871,136 @@ Please run the 64-bit version of Task Explorer instead.</source>
         <translation>你正在尝试在64位Windows上运行Task Explorer的32位版本。大多数功能将不能正常工作。
 
 请运行64位版本的Task Explorer来替代。</translation>
+    </message>
+    <message>
+        <source>Disable KTaskExplorer driver. Note: this will limit the aplications functionality!</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Updating DynData</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;TaskExplorer is a powerfull multi-purpose Task Manager that helps you monitor system resources, debug software and detect malware.&lt;/p&gt;&lt;p&gt;&lt;/p&gt;&lt;p&gt;On Windows TaskExplorer is powered by the ProsessHacker Library.&lt;/p&gt;&lt;p&gt;&lt;/p&gt;&lt;p&gt;Visit &lt;a href=&quot;https://github.com/DavidXanatos/TaskExplorer&quot;&gt;TaskExplorer on github&lt;/a&gt; for more information.&lt;/p&gt;&lt;p&gt;&lt;/p&gt;&lt;p&gt;Config Dir: %1&lt;/p&gt;&lt;p&gt;&lt;/p&gt;&lt;p&gt;Icons from &lt;a href=&quot;https://icons8.com&quot;&gt;icons8.com&lt;/a&gt;&lt;/p&gt;&lt;p&gt;&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to update DynData, %1, Error: 0x%2 (%3).
+Do you want to continue anyways (Ok), or terminate (Cancel)?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The current DynData for the KTaskExplorer driver does not yet supported on your windows kernel version.&lt;br /&gt;You can check for &lt;a href=&quot;https://github.com/DavidXanatos/TaskExplorer/releases&quot;&gt;TaskExplorer updates on github&lt;/a&gt;, or grab the latest ksidyn.bin and ksidyn.sig from &lt;a href=&quot;https://systeminformer.sourceforge.io/downloads&quot;&gt;the latest SystemInformer&lt;/a&gt; and put them in the instalaltion directors next to KSystemInformer.sys.&lt;br /&gt;Instalation Directory: %4&lt;br /&gt;&lt;br /&gt;Operating System Details:&lt;br /&gt;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;Windows %1&lt;br /&gt;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;Windows Kernel %2&lt;br /&gt;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;TaskExplorer %3&lt;br /&gt;&lt;br /&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Update did not help, do you want to continue anyways (Ok), or terminate (Cancel)?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Do you want to try to download updated DynData (Yes), start without the driver (No), or terminate (Cancel)?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to load KTaskExplorer driver, %1, Error: 0x%2 (%3).
+Do you want to continue anyways (Ok), or terminate (Cancel)?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to update DynData, %1, Error: 0x%2 (%3).</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to open archive.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>DynData not found in archive.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to extreact files.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Updated DynData successfully</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Latest SI build already downloaded</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Downloading latest SI build</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Download Failed, Error: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to open file for writing.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Successfully Downloaded latest SI build</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Update Check Failed, Error: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Update Check Failed, Error: Unrecognized Reply</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Use KSystemInformer</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;h3&gt;About TaskExplorer&lt;/h3&gt;&lt;p&gt;Version %1&lt;/p&gt;&lt;p&gt;Copyright (C) 2019-2025 David Xanatos (xanasoft.com)&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Reset Columns</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Copy Cell</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Copy Row</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Copy Panel</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Case Sensitive</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>RegExp</source>
+        <translation type="unfinished">注册表浏览</translation>
+    </message>
+    <message>
+        <source>Highlight</source>
+        <translation type="unfinished">高亮</translation>
+    </message>
+    <message>
+        <source>Close</source>
+        <translation type="unfinished">关闭</translation>
+    </message>
+    <message>
+        <source>&amp;Find ...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>All columns</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -8384,6 +8534,14 @@ If you save the recovery information using this program, the additional failure 
     <message>
         <source>The kernel driver file &apos;%1&apos; was not found.</source>
         <translation>驱动程序文件 &apos;%1&apos; 未被找到。</translation>
+    </message>
+    <message>
+        <source>The Process Hacker kernel driver &apos;%1&apos; was not found.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unable to load the kernel driver, Error: 0x%1</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

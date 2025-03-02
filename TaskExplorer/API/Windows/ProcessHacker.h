@@ -99,10 +99,10 @@ extern BOOLEAN g_KphStartupHigh;
 // initialization call
 int InitPH(bool bSvc = false);
 
-//STATUS InitKPH(QString DeviceName, QString FileName);
-
 STATUS InitKSI(const QString& AppDir);
 STATUS CleanupKSI();
+
+STATUS TryUpdateDynData(const QString& AppDir);
 
 bool KphSetDebugLog(bool Enable);
 bool KphSetSystemMon(bool Enable);

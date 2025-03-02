@@ -13,6 +13,9 @@
 #include "stdafx.h"
 #include "../../../MiscHelpers/Common/Settings.h"
 #include "../../../MiscHelpers/Common/Common.h"
+#include "../../../MiscHelpers/Common/ProgressDialog.h"
+#include "../../../MiscHelpers/Archive/Archive.h"
+#include "../GUI/TaskExplorer.h"
 #include "ProcessHacker.h"
 #include <kphmsgdyn.h>
 extern "C" {
@@ -415,7 +418,9 @@ NTSTATUS KsiGetDynData(
 	*Signature = NULL;
 	*SignatureLength = 0;
 
-	status = KsiReadConfiguration(Path, L"ksidyn.bin", &data, &dataLength);
+	bool bUseNew = QFile::exists(Path + "\\new_ksidyn.bin");
+
+	status = KsiReadConfiguration(Path, bUseNew ? L"new_ksidyn.bin" : L"ksidyn.bin", &data, &dataLength);
 	if (!NT_SUCCESS(status))
 		goto CleanupExit;
 
@@ -423,7 +428,7 @@ NTSTATUS KsiGetDynData(
 	//if (!NT_SUCCESS(status))
 	//	goto CleanupExit;
 
-	status = KsiReadConfiguration(Path, L"ksidyn.sig", &sig, &sigLength);
+	status = KsiReadConfiguration(Path, bUseNew ? L"new_ksidyn.sig" : L"ksidyn.sig", &sig, &sigLength);
 	if (!NT_SUCCESS(status))
 		goto CleanupExit;
 	
@@ -453,142 +458,6 @@ CleanupExit:
 }
 
 }
-
-//STATUS InitKPH(QString DeviceName, QString FileName)
-//{
-//	if (DeviceName.isEmpty())
-//		DeviceName = QString::fromWCharArray(KPH_SERVICE_NAME);
-//	if (FileName.isEmpty())
-//		FileName = "systeminformer.sys";
-//
-//	// if the file name is not a full path Add the application directory
-//	if (!FileName.contains("\\"))
-//		FileName = QApplication::applicationDirPath() + "/" + FileName;
-//
-//	FileName = FileName.replace("/", "\\");
-//    if (!QFile::exists(FileName))
-//		return ERR(QObject::tr("The kernel driver file '%1' was not found.").arg(FileName), STATUS_NOT_FOUND);
-//
-//    if (!PhGetOwnTokenAttributes().Elevated)
-//        return ERR("Driver required administrative privileges.", STATUS_ELEVATION_REQUIRED);
-//
-//	PBYTE dynData = NULL;
-//	ULONG dynDataLength;
-//	PBYTE signature = NULL;
-//	ULONG signatureLength;
-//
-//	NTSTATUS status = KsiGetDynData(&dynData, &dynDataLength, &signature, &signatureLength);
-//	if (!NT_SUCCESS(status)) 
-//		return ERR("Unsupported windows version.", STATUS_UNKNOWN_REVISION);
-//
-//	// todo: fix-me
-//    //if (PhDoesOldKsiExist())
-//    //{
-//    //    if (PhGetIntegerSetting(L"EnableKphWarnings") && !PhStartupParameters.PhSvc)
-//    //    {
-//    //        PhShowKsiError(
-//    //            L"Unable to load kernel driver, the last System Informer update requires a reboot.",
-//    //            STATUS_PENDING 
-//    //            );
-//    //    }
-//    //    return;
-//    //}
-//
-//	STATUS Status = OK;
-//	PPH_STRING ksiFileName = NULL;
-//    PPH_STRING ksiServiceName = NULL;
-//
-//    //if (!(ksiServiceName = PhCreateString(KPH_SERVICE_NAME)))
-//	if (!(ksiServiceName = CastQString(DeviceName)))
-//        goto CleanupExit;
-//    if (!(ksiFileName = CastQString(FileName)))
-//        goto CleanupExit;
-//
-//    {
-//        KPH_CONFIG_PARAMETERS config = { 0 };
-//        PPH_STRING objectName = NULL;
-//        PPH_STRING portName = NULL;
-//        PPH_STRING altitude = NULL;
-//
-//        //if (PhIsNullOrEmptyString(objectName = PhGetStringSetting(L"KphObjectName")))
-//        //PhMoveReference((PVOID*)&objectName, PhCreateString(KPH_OBJECT_NAME));
-//		objectName = CastQString("\\Driver\\" + DeviceName);
-//        //if (PhIsNullOrEmptyString(portName = PhGetStringSetting(L"KphPortName")))
-//        //PhMoveReference((PVOID*)&portName, PhCreateString(KPH_PORT_NAME));
-//		portName = CastQString("\\" + DeviceName);
-//        //if (PhIsNullOrEmptyString(altitude = PhGetStringSetting(L"KphAltitude")))
-//        PhMoveReference((PVOID*)&altitude, PhCreateString(L"385210.5"));
-//
-//        config.FileName = &ksiFileName->sr;
-//        config.ServiceName = &ksiServiceName->sr;
-//        config.ObjectName = &objectName->sr;
-//        config.PortName = &portName->sr;
-//        config.Altitude = &altitude->sr;
-//		config.Flags.Flags = 0;
-//		//config.Flags.DisableImageLoadProtection = !!PhGetIntegerSetting(L"KsiDisableImageLoadProtection");
-//		//config.Flags.RandomizedPoolTag = !!PhGetIntegerSetting(L"KsiRandomizedPoolTag");
-//		//config.Flags.DynDataNoEmbedded = !!PhGetIntegerSetting(L"KsiDynDataNoEmbedded");
-//        config.Callback = (PKPH_COMMS_CALLBACK)KsiCommsCallback;
-//
-//        status = KphConnect(&config);
-//
-//        if (NT_SUCCESS(status))
-//        {
-//			KphActivateDynData(dynData, dynDataLength, signature, signatureLength);
-//
-//            KPH_LEVEL level = KsiLevel();
-//
-//            if (!NtCurrentPeb()->BeingDebugged && (level != KphLevelMax))
-//            {
-//                //if ((level == KphLevelHigh) &&
-//                //    !PhStartupParameters.KphStartupMax)
-//                //{
-//                //    PH_STRINGREF commandline = PH_STRINGREF_INIT(L" -kx");
-//                //    PhRestartSelf(&commandline);
-//                //}
-//
-//                //if ((level < KphLevelHigh) &&
-//                //    !PhStartupParameters.KphStartupMax &&
-//                //    !PhStartupParameters.KphStartupHigh)
-//                //{
-//                //    PH_STRINGREF commandline = PH_STRINGREF_INIT(L" -kh");
-//                //    PhRestartSelf(&commandline);
-//                //}
-//            }
-//
-//			/*KPH_INFORMER_SETTINGS filter;
-//
-//			filter.Flags = 0;
-//			filter.Flags2 = 0;
-//			filter.Flags3 = 0;
-//			filter.ProcessCreate = FALSE;
-//			filter.FilePreCreate = TRUE;
-//			filter.FilePostCreate = TRUE;
-//			filter.FileEnablePostCreateReply = TRUE;
-//
-//			KphSetInformerSettings(&filter);*/
-//        }
-//        else
-//        {
-//			Status = ERR("Unable to load the kernel driver service.", status);
-//        }
-//
-//        PhClearReference((PVOID*)&objectName);
-//    }
-//
-//CleanupExit:
-//    if (ksiServiceName)
-//        PhDereferenceObject(ksiServiceName);
-//    if (ksiFileName)
-//        PhDereferenceObject(ksiFileName);
-//	if (signature)
-//		PhFree(signature);
-//	if (dynData)
-//		PhFree(dynData);
-//
-//	return Status;
-//}
-
 
 PPH_STRING KsiServiceName = NULL;
 BOOLEAN KsiEnableLoadNative = FALSE;
@@ -723,6 +592,23 @@ BOOLEAN PhDoesOldKsiExist(
 	return result;
 }
 
+bool IsOnARM64()
+{
+	HMODULE Kernel32 = GetModuleHandleW(L"Kernel32.dll");
+	typedef BOOL(WINAPI* LPFN_ISWOW64PROCESS2)(HANDLE, PUSHORT, PUSHORT);
+	LPFN_ISWOW64PROCESS2 pIsWow64Process2 = (LPFN_ISWOW64PROCESS2)GetProcAddress(Kernel32, "IsWow64Process2");
+	if (pIsWow64Process2)
+	{
+		USHORT ProcessMachine = 0xFFFF;
+		USHORT NativeMachine = 0xFFFF;
+		BOOL ok = pIsWow64Process2(GetCurrentProcess(), &ProcessMachine, &NativeMachine);
+
+		if (NativeMachine == IMAGE_FILE_MACHINE_ARM64)
+			return true;
+	}
+	return false;
+}
+
 STATUS InitKSI(const QString& AppDir)
 {
 	QString FileName = theConf->GetString("OptionsKSI/FileName", "SystemInformer.sys");
@@ -737,20 +623,10 @@ STATUS InitKSI(const QString& AppDir)
 	// if the file name is not a full path Add the application directory
 	if (!FileName.contains("\\")) 
 	{
-		FileName = AppDir + "\\" + FileName;
-
-		HMODULE Kernel32 = GetModuleHandleW(L"Kernel32.dll");
-		typedef BOOL(WINAPI* LPFN_ISWOW64PROCESS2)(HANDLE, PUSHORT, PUSHORT);
-		LPFN_ISWOW64PROCESS2 pIsWow64Process2 = (LPFN_ISWOW64PROCESS2)GetProcAddress(Kernel32, "IsWow64Process2");
-		if (pIsWow64Process2)
-		{
-			USHORT ProcessMachine = 0xFFFF;
-			USHORT NativeMachine = 0xFFFF;
-			BOOL ok = pIsWow64Process2(GetCurrentProcess(), &ProcessMachine, &NativeMachine);
-
-			if (NativeMachine == IMAGE_FILE_MACHINE_ARM64)
-				FileName = Split2(AppDir, "\\", true).first + "\\ARM64\\" + FileName;
-		}
+		if (IsOnARM64())
+			FileName = Split2(AppDir, "\\", true).first + "\\ARM64\\" + FileName;
+		else
+			FileName = AppDir + "\\" + FileName;
 	}
 
 	FileName = FileName.replace("/", "\\");
@@ -989,6 +865,163 @@ STATUS CleanupKSI()
 	if(!NT_SUCCESS(status))
 		return ERR("KphServiceStop Failed.", status);
 	return OK;
+}
+
+STATUS TryUpdateDynData(const QString& AppDir)
+{
+	STATUS Status;
+
+	CProgressDialog Progress(CTaskExplorer::tr("Updating DynData"));
+	QNetworkAccessManager Manager;
+
+	QString Folder = theConf->GetConfigDir() + "\\Temp";
+	QDir().mkpath(Folder);
+
+	auto FailWithMessage = [&](const QString& Message) {
+		Status = ERR(Message, STATUS_UNSUCCESSFUL);
+		Progress.OnProgressMessage(Message);
+		QTimer::singleShot(3000, [&] {Progress.close();});
+		Progress.close();
+	};
+
+	auto ApplyUpdate = [&](const QString& FileName){
+
+		CArchive Archive(FileName);
+
+		if (Archive.Open() != ERR_7Z_OK) {
+			FailWithMessage(CTaskExplorer::tr("Failed to open archive."));
+			return;
+		}
+
+		bool IsBoxArchive = false;
+
+		QMap<int, QIODevice*> Files;
+
+		int bin = Archive.FindByPath(IsOnARM64() ? "arm64/ksidyn.bin" : "amd64/ksidyn.bin");
+		int sig = Archive.FindByPath(IsOnARM64() ? "arm64/ksidyn.sig" : "amd64/ksidyn.sig");
+
+		if (bin == -1 || sig == -1) {
+			FailWithMessage(CTaskExplorer::tr("DynData not found in archive."));
+#ifndef _DEBUG
+			QFile::remove(FileName);
+#endif
+			return;
+		}
+
+		QString DrvPath;
+		QString DrvFileName = theConf->GetString("OptionsKSI/FileName", "SystemInformer.sys");
+		if (DrvFileName.contains("\\")) 
+			DrvPath = Split2(DrvFileName, "\\", true).first;
+		else if (IsOnARM64())
+			DrvPath = Split2(AppDir, "\\", true).first + "\\ARM64";
+		else
+			DrvPath = AppDir;
+
+		QFile::remove(DrvPath + "\\new_ksidyn.bin");
+		QFile::remove(DrvPath + "\\new_ksidyn.sig");
+
+		Files.insert(bin, new QFile(DrvPath + "\\new_ksidyn.bin"));
+		Files.insert(sig, new QFile(DrvPath + "\\new_ksidyn.sig"));
+
+		if (!Archive.Extract(&Files)) {
+			FailWithMessage(CTaskExplorer::tr("Failed to extreact files."));
+#ifndef _DEBUG
+			QFile::remove(FileName);
+#endif
+			return;
+		}
+
+#ifndef _DEBUG
+		QFile::remove(FileName);
+#endif
+		Archive.Close(); Progress.OnProgressMessage(CTaskExplorer::tr("Updated DynData successfully"));
+		QTimer::singleShot(3000, [&] {Progress.close(); });
+	};
+
+	QScopedPointer<QNetworkReply> DlReply;
+	auto DownloadSI = [&](const QString& sUrl) {
+
+		QUrl DlUrl(sUrl);
+
+		QString FileName = Folder + "\\" + DlUrl.fileName();
+
+		if (QFile::exists(FileName)) {
+#ifdef _DEBUG
+			Progress.OnProgressMessage(CTaskExplorer::tr("Latest SI build already downloaded"));
+			ApplyUpdate(FileName);
+			return;
+#else
+			QFile::remove(FileName);
+#endif
+		}
+
+		QNetworkRequest DlRequest(DlUrl);
+		DlRequest.setAttribute(QNetworkRequest::RedirectPolicyAttribute, QNetworkRequest::NoLessSafeRedirectPolicy);
+
+		DlReply.reset(Manager.get(DlRequest));
+
+		QObject::connect(DlReply.data(), &QNetworkReply::downloadProgress, &Manager, [&](qint64 bytes, qint64 bytesTotal) {
+			if (bytesTotal != 0)
+				Progress.OnProgressMessage(CTaskExplorer::tr("Downloading latest SI build"), 100 * bytes / bytesTotal);
+		});
+
+		QObject::connect(DlReply.data(), &QNetworkReply::finished, &Manager, [&, FileName]() {
+
+			if (DlReply->error() != QNetworkReply::NoError) {
+				QString Error = DlReply->errorString();
+				FailWithMessage(CTaskExplorer::tr("Download Failed, Error: %1").arg(Error));
+				return;
+			}
+
+			QFile File(FileName);
+			if (!File.open(QIODevice::WriteOnly)) {
+				FailWithMessage(CTaskExplorer::tr("Failed to open file for writing."));
+				return;
+			}
+			File.write(DlReply->readAll());
+			File.close();
+
+			Progress.OnProgressMessage(CTaskExplorer::tr("Successfully Downloaded latest SI build"));
+			ApplyUpdate(FileName);
+		});
+	};
+
+	QScopedPointer<QNetworkReply> Reply;
+	auto GetUpdate = [&](){
+
+		QString sUrl = theConf->GetString("OptionsKSI/SIUpdateUrl", "https://systeminformer.dev/update?channel=canary");
+		
+		QUrl Url(sUrl);
+		
+		QNetworkRequest Request(Url);
+		//Request.setAttribute(QNetworkRequest::RedirectPolicyAttribute, QNetworkRequest::NoLessSafeRedirectPolicy);
+
+		Reply.reset(Manager.get(Request));
+
+		QObject::connect(Reply.data(), &QNetworkReply::finished, &Manager, [&]() {
+
+			if (Reply->error() != QNetworkReply::NoError) {
+				QString Error = Reply->errorString();
+				FailWithMessage(CTaskExplorer::tr("Update Check Failed, Error: %1").arg(Error));
+				return;
+			}
+
+			QVariantMap Data = QJsonDocument::fromJson(Reply->readAll()).toVariant().toMap();
+			QString BinUrl = Data["bin_url"].toString();
+			if (BinUrl.isEmpty()) {
+				FailWithMessage(CTaskExplorer::tr("Update Check Failed, Error: Unrecognized Reply"));
+				return;
+			}
+
+			DownloadSI(BinUrl);
+		});
+	};
+
+	GetUpdate();
+
+	Progress.exec();
+
+	return Status;
 }
 
 bool KphSetDebugLog(bool Enable)

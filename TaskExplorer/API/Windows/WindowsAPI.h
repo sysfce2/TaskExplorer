@@ -64,10 +64,13 @@ public:
 
 	//virtual QPair<QString, QString> SellectDriver();
 	//virtual STATUS InitDriver(QString DeviceName, QString FileName);
+	virtual STATUS InitHackerDriver();
 
 	virtual bool RootAvaiable();
 
 	virtual CProcessPtr GetProcessByID(quint64 ProcessId, bool bAddIfNew = false);
+
+	virtual bool UpdateAll();
 
 	virtual bool UpdateSysStats();
 

@@ -130,32 +130,32 @@
   </ImportGroup>
   <PropertyGroup Label="QtSettings" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <QtInstall>msvc2019_64</QtInstall>
-    <QtModules>core;network;gui;widgets;winextras;concurrent</QtModules>
+    <QtModules>core;network;gui;widgets;winextras;concurrent;core-private</QtModules>
     <QtExcludedOptions>-Zc:strictStrings</QtExcludedOptions>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'" Label="QtSettings">
     <QtInstall>6.8.1_msvc2022_64</QtInstall>
-    <QtModules>core;network;gui;widgets;concurrent</QtModules>
+    <QtModules>core;network;gui;widgets;winextras;concurrent;core-private</QtModules>
     <QtExcludedOptions>-Zc:strictStrings</QtExcludedOptions>
   </PropertyGroup>
   <PropertyGroup Label="QtSettings" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <QtInstall>msvc2019</QtInstall>
-    <QtModules>core;network;gui;widgets;winextras;concurrent</QtModules>
+    <QtModules>core;network;gui;widgets;winextras;concurrent;core-private</QtModules>
     <QtExcludedOptions>-Zc:strictStrings</QtExcludedOptions>
   </PropertyGroup>
   <PropertyGroup Label="QtSettings" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <QtInstall>msvc2019_64</QtInstall>
-    <QtModules>core;network;gui;widgets;winextras;concurrent</QtModules>
+    <QtModules>core;network;gui;widgets;winextras;concurrent;core-private</QtModules>
     <QtExcludedOptions>-Zc:strictStrings</QtExcludedOptions>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'" Label="QtSettings">
     <QtInstall>6.8.1_msvc2022_64</QtInstall>
-    <QtModules>core;network;gui;widgets;concurrent</QtModules>
+    <QtModules>core;network;gui;widgets;winextras;concurrent;core-private</QtModules>
     <QtExcludedOptions>-Zc:strictStrings</QtExcludedOptions>
   </PropertyGroup>
   <PropertyGroup Label="QtSettings" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <QtInstall>msvc2019</QtInstall>
-    <QtModules>core;network;gui;widgets;concurrent</QtModules>
+    <QtModules>core;network;gui;widgets;winextras;concurrent;core-private</QtModules>
     <QtExcludedOptions>-Zc:strictStrings</QtExcludedOptions>
   </PropertyGroup>
   <ImportGroup Condition="Exists('$(QtMsBuild)\qt.props')">
@@ -347,6 +347,9 @@
     <PostBuildEvent>
       <Command>cmd /c "cd "$(SolutionDir)ProcessHacker\" &amp; "$(SolutionDir)ProcessHacker\tools\CustomBuildTool\bin\Release\$(PROCESSOR_ARCHITECTURE)\CustomBuildTool.exe" -kph-sign "$(OutDir)$(TargetName)$(TargetExt)""</Command>
     </PostBuildEvent>
+    <QtTranslation>
+      <BuildAction>lupdate_lrelease</BuildAction>
+    </QtTranslation>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">
     <ClCompile>
@@ -462,6 +465,35 @@
     <ClCompile Include="API\Windows\Finders\WinStringFinder.cpp" />
     <ClCompile Include="API\Windows\Finders\WinModuleFinder.cpp" />
     <ClCompile Include="API\Windows\DnsResolver.cpp" />
+    <ClCompile Include="API\Windows\SystemHacker\SystemHacker.cpp" />
+    <ClCompile Include="API\Windows\SystemHacker\xph.c">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">/we4013 %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">/we4013 %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">/we4013 %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">/we4013 %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">/we4013 %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">/we4013 %(AdditionalOptions)</AdditionalOptions>
+    </ClCompile>
+    <ClCompile Include="API\Windows\SystemHacker\xphdata.c">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="API\Windows\Monitors\EtwEventMonitor.cpp" />
     <ClCompile Include="API\Windows\Monitors\EventMonitor.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
@@ -902,6 +934,9 @@
     <QtMoc Include="API\Windows\DnsResolver.h" />
     <QtMoc Include="API\Windows\Monitors\FwEventMonitor.h" />
     <QtMoc Include="API\Windows\Monitors\EtwEventMonitor.h" />
+    <ClInclude Include="API\Windows\SystemHacker\SystemHacker.h" />
+    <ClInclude Include="API\Windows\SystemHacker\xphuser.h" />
+    <ClInclude Include="API\Windows\SystemHacker\xphuserp.h" />
     <ClInclude Include="API\Windows\Monitors\d3dkmt\d3dkmdt.h" />
     <ClInclude Include="API\Windows\Monitors\d3dkmt\d3dkmthk.h" />
     <ClInclude Include="API\Windows\Monitors\d3dkmt\d3dukmdt.h" />
@@ -1420,10 +1455,18 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="..\CHANGELOG.md" />
-    <None Include="taskexplorer_de.ts" />
-    <None Include="taskexplorer_en.ts" />
-    <None Include="taskexplorer_it.ts" />
-    <None Include="taskexplorer_pl.ts" />
+    <QtTranslation Include="taskexplorer_de.ts">
+      <FileType>Document</FileType>
+    </QtTranslation>
+    <QtTranslation Include="taskexplorer_en.ts">
+      <FileType>Document</FileType>
+    </QtTranslation>
+    <QtTranslation Include="taskexplorer_it.ts">
+      <FileType>Document</FileType>
+    </QtTranslation>
+    <QtTranslation Include="taskexplorer_pl.ts">
+      <FileType>Document</FileType>
+    </QtTranslation>
   </ItemGroup>
   <ItemGroup>
     <QtUic Include="Forms\DriverWindow.ui" />

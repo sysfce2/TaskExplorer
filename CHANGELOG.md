@@ -4,12 +4,21 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 
 
-## [1.6.2] - 2025-02-??
 
+## [1.6.2] - 2025-03-02
+
+### Added
+- added driver DynData updater, on start when the current DynData is not compatible with the windows kernel TE will offer an option to update the DynData
+  - Note: the updater extracts the DynData from regular SystemInformer canary update packages.
+- added preparations (not enebled) to use the old driver on windows 7
+
+### Changed
+- moved translations to translations.7z
 
 ### Fixed
 - incompatybility witn windows 7 introduced in 1.16.1
-- 
+- fixed crash in module search window
+- fixed performance issue with codepage detection
 
 
 
@@ -121,7 +130,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ## [1.5.0] - 2022-12-10
 
 ### Changed
-- updated PHlib to version 3.0.5553
+- updated PHlib to version 3.0.5553 with new KSystemInformer driver
 - updated DotNET counter code
 
 ### Fixed

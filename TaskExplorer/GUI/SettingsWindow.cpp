@@ -2,6 +2,7 @@
 #include "SettingsWindow.h"
 #include "TaskExplorer.h"
 #include "../../MiscHelpers/Common/Settings.h"
+#include "../../MiscHelpers/Archive/ArchiveFS.h"
 
 int CSettingsWindow__Chk2Int(Qt::CheckState state)
 {
@@ -31,16 +32,26 @@ CSettingsWindow::CSettingsWindow(QWidget *parent)
 	this->setCentralWidget(centralWidget);
 	this->setWindowTitle(tr("Task Explorer - Settings"));
 
-	ui.uiLang->addItem("International English", "");
-	QDir langDir(QApplication::applicationDirPath() + "/translations/");
-	foreach(const QString& langFile, langDir.entryList(QStringList("taskexplorer_*.qm"), QDir::Files))
 	{
-		QString Code = langFile.mid(13, langFile.length() - 13 - 3);
-		QLocale Locale(Code);
-		QString Lang = Locale.nativeLanguageName();
-		ui.uiLang->addItem(Lang, Code);
+		ui.uiLang->addItem(tr("Auto Detection"), "");
+		ui.uiLang->addItem(tr("No Translation"), "native");
+
+		QString langDir;
+		C7zFileEngineHandler LangFS("lang", this);
+		if (LangFS.Open(QApplication::applicationDirPath() + "/translations.7z"))
+			langDir = LangFS.Prefix() + "/";
+		else
+			langDir = QApplication::applicationDirPath() + "/translations/";
+
+		foreach(const QString & langFile, QDir(langDir).entryList(QStringList("taskexplorer_*.qm"), QDir::Files))
+		{
+			QString Code = langFile.mid(13, langFile.length() - 13 - 3);
+			QLocale Locale(Code);
+			QString Lang = Locale.nativeLanguageName();
+			ui.uiLang->addItem(Lang, Code);
+		}
+		ui.uiLang->setCurrentIndex(ui.uiLang->findData(theConf->GetString("General/Language")));
 	}
-	ui.uiLang->setCurrentIndex(ui.uiLang->findData(theConf->GetString("General/Language")));
 
 	ui.chkUseCycles->setChecked(theConf->GetBool("Options/EnableCycleCpuUsage", true));
 	ui.chkLinuxStyle->setTristate(true);

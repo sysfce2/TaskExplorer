@@ -138,14 +138,12 @@ copy %srcPath%\TaskExplorer.pdb %instPath%\
 ECHO Copying translations
 
 mkdir %instPath%\translations\
-rem copy /y %~dp0..\TaskExplorer\taskexplorer_*.qm %instPath%\translations\
-copy /y %~dp0..\TaskExplorer\Build_SandMan_%archPath%\release\taskexplorer_*.qm %instPath%\translations\
-copy /y %~dp0\qttranslations\qm\qt_*.qm %instPath%\translations\
-copy /y %~dp0\qttranslations\qm\qtbase_*.qm %instPath%\translations\
-copy /y %~dp0\qttranslations\qm\qtmultimedia_*.qm %instPath%\translations\
+copy /y %srcPath%\taskexplorer_*.qm %instPath%\translations\
+copy /y %qtPath%\translations\qt_*.qm %instPath%\translations\
+copy /y %qtPath%\translations\qtbase_*.qm %instPath%\translations\
+copy /y %qtPath%\translations\qtmultimedia_*.qm %instPath%\translations\
 
 IF NOT %archPath% == ARM64 (
-REM IF %archPath% == Win32 (
 REM copy /y %qtPath%\translations\qtscript_*.qm %instPath%\translations\
 copy /y %qtPath%\translations\qtxmlpatterns_*.qm %instPath%\translations\
 )
@@ -154,6 +152,8 @@ copy /y %qtPath%\translations\qtxmlpatterns_*.qm %instPath%\translations\
 rmdir /S /Q %instPath%\translations\
 
 ECHO Copying Driver
+
+copy /y %~dp0.\7z\7-Zip-%archPath%\7z.dll %instPath%\
 
 IF NOT %archPath% == Win32 (
     copy /y %siPath%\ksi.dll %instPath%\

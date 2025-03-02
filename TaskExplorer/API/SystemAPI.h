@@ -176,6 +176,7 @@ public:
 	virtual bool RemovePersistentPreset(const QString& FileName);
 
 public slots:
+	virtual bool UpdateAll() = 0;
 	virtual bool UpdateSysStats() = 0;
 	virtual bool UpdateProcessList() = 0;
 	virtual bool UpdateSocketList() = 0;

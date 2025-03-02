@@ -29,14 +29,13 @@ CModulesView::CModulesView(bool bGlobal, QWidget *parent)
 		m_pLoadModule = new QPushButton(tr("Inject DLL"));
 		connect(m_pLoadModule, SIGNAL(pressed()), this, SLOT(OnLoad()));
 		m_pFilterLayout->addWidget(m_pLoadModule);
+
+		m_pShowModPages = new QCheckBox(tr("Show Modified Pages"));
+		m_pFilterLayout->addWidget(m_pShowModPages);
+		connect(m_pShowModPages, SIGNAL(stateChanged(int)), this, SLOT(Refresh()));
+
+		m_pFilterLayout->addItem(new QSpacerItem(0, 0, QSizePolicy::Expanding, QSizePolicy::Minimum));
 	}
-
-
-	m_pShowModPages = new QCheckBox(tr("Show Modified Pages"));
-	m_pFilterLayout->addWidget(m_pShowModPages);
-	connect(m_pShowModPages, SIGNAL(stateChanged(int)), this, SLOT(Refresh()));
-
-	m_pFilterLayout->addItem(new QSpacerItem(0, 0, QSizePolicy::Expanding, QSizePolicy::Minimum));
 
 	// Module List
 	m_pModuleModel = new CModuleModel();

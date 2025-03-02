@@ -27,6 +27,8 @@ extern "C" {
 #include "MultiErrorDialog.h"
 #include "PersistenceConfig.h"
 #include "Filters/ProcessFilterModel.h"
+#include "../../MiscHelpers/Archive/Archive.h"
+#include "../../MiscHelpers/Archive/ArchiveFS.h"
 
 
 QIcon g_ExeIcon;
@@ -309,7 +311,7 @@ CTaskExplorer::CTaskExplorer(QWidget *parent)
 		//m_pMenuDriverConf = m_pMenuOptions->addAction(MakeActionIcon(":/Actions/Driver"), tr("Driver Options"), this, SLOT(OnDriverConf()));
 		//m_pMenuDriverConf->setEnabled(!PhIsExecutingInWow64());
 
-		m_pMenuUseDriver = m_pMenuOptions->addAction(tr("Use Driver"), this, SLOT(OnUseDriver()));
+		m_pMenuUseDriver = m_pMenuOptions->addAction(tr("Use KSystemInformer"), this, SLOT(OnUseDriver()));
 		m_pMenuUseDriver->setEnabled(theAPI->RootAvaiable());
 		m_pMenuUseDriver->setCheckable(true);
 		m_pMenuUseDriver->setChecked(theConf->GetBool("OptionsKSI/KsiEnable", true));
@@ -765,12 +767,7 @@ void CTaskExplorer::timerEvent(QTimerEvent* pEvent)
 
 void CTaskExplorer::UpdateAll()
 {
-	QTimer::singleShot(0, theAPI, SLOT(UpdateProcessList()));
-	QTimer::singleShot(0, theAPI, SLOT(UpdateSocketList()));
-
-	QTimer::singleShot(0, theAPI, SLOT(UpdateSysStats()));
-
-	QTimer::singleShot(0, theAPI, SLOT(UpdateServiceList()));
+	QTimer::singleShot(0, theAPI, SLOT(UpdateAll()));
 
 	if (!isVisible() || windowState().testFlag(Qt::WindowMinimized))
 		return;
@@ -1783,6 +1780,65 @@ void CTaskExplorer::OnStatusMessage(const QString& Message)
 	statusBar()->showMessage(Message, 5000); // show for 5 seconds
 }
 
+void CTaskExplorer::LoadLanguage()
+{
+	m_Language = theConf->GetString("General/Language");
+	if(m_Language.isEmpty())
+		m_Language = QLocale::system().name();
+
+	if (m_Language.compare("native", Qt::CaseInsensitive) == 0)
+#ifdef _DEBUG
+		m_Language = "en";
+#else
+		m_Language.clear();
+#endif
+
+	//m_LanguageId = LocaleNameToLCID(m_Language.toStdWString().c_str(), 0);
+	//if (!m_LanguageId)
+	//	m_LanguageId = 1033; // default to English
+
+	LoadLanguage(m_Language, "taskexplorer", 0);
+	LoadLanguage(m_Language, "qt", 1);
+
+	QTreeViewEx::m_ResetColumns = tr("Reset Columns");
+	CPanelView::m_CopyCell = tr("Copy Cell");
+	CPanelView::m_CopyRow = tr("Copy Row");
+	CPanelView::m_CopyPanel = tr("Copy Panel");
+	CFinder::m_CaseInsensitive = tr("Case Sensitive");
+	CFinder::m_RegExpStr = tr("RegExp");
+	CFinder::m_Highlight = tr("Highlight");
+	CFinder::m_CloseStr = tr("Close");
+	CFinder::m_FindStr = tr("&Find ...");
+	CFinder::m_AllColumns = tr("All columns");
+}
+
+void CTaskExplorer::LoadLanguage(const QString& Lang, const QString& Module, int Index)
+{
+	qApp->removeTranslator(&m_Translator[Index]);
+
+	if (Lang.isEmpty())
+		return;
+
+	QString LangAux = Lang; // Short version as fallback
+	LangAux.truncate(LangAux.lastIndexOf('_'));
+
+	QString LangDir;
+	C7zFileEngineHandler LangFS("lang", this);
+	if (LangFS.Open(QApplication::applicationDirPath() + "/translations.7z"))
+		LangDir = LangFS.Prefix() + "/";
+	else
+		LangDir = QApplication::applicationDirPath() + "/translations/";
+
+	bool bOk = false;
+	QString LangPath = LangDir + Module + "_";
+	bool bAux = false;
+	if (QFile::exists(LangPath + Lang + ".qm") || (bAux = QFile::exists(LangPath + LangAux + ".qm")))
+	{
+		if(m_Translator[Index].load(LangPath + (bAux ? LangAux : Lang) + ".qm", LangDir))
+			bOk = qApp->installTranslator(&m_Translator[Index]);
+	}
+}
+
 QString CTaskExplorer::GetVersion()
 {
 	QString Version = QString::number(VERSION_MJR) + "." + QString::number(VERSION_MIN) //.rightJustified(2, '0')
@@ -1814,8 +1870,7 @@ void CTaskExplorer::OnAbout()
 		QString AboutCaption = tr(
 			"<h3>About TaskExplorer</h3>"
 			"<p>Version %1</p>"
-			"<p>by DavidXanatos</p>"
-			"<p>Copyright (c) 2019-2025</p>"
+			"<p>Copyright (C) 2019-2025 David Xanatos (xanasoft.com)</p>"
 		).arg(GetVersion());
 		QString AboutText = tr(
 			"<p>TaskExplorer is a powerfull multi-purpose Task Manager that helps you monitor system resources, debug software and detect malware.</p>"
@@ -1826,11 +1881,11 @@ void CTaskExplorer::OnAbout()
 #endif
 			"<p>Visit <a href=\"https://github.com/DavidXanatos/TaskExplorer\">TaskExplorer on github</a> for more information.</p>"
 			"<p></p>"
-			"<p></p>"
+			"<p>Config Dir: %1</p>"
 			"<p></p>"
 			"<p>Icons from <a href=\"https://icons8.com\">icons8.com</a></p>"
 			"<p></p>"
-		);
+		).arg(theConf->GetConfigDir());
 		QMessageBox *msgBox = new QMessageBox(this);
 		msgBox->setAttribute(Qt::WA_DeleteOnClose);
 		msgBox->setWindowTitle(tr("About TaskExplorer"));
@@ -1859,29 +1914,4 @@ void CTaskExplorer::OnAbout()
 		QMessageBox::aboutQt(this);
 	else
 		QDesktopServices::openUrl(QUrl("https://www.patreon.com/DavidXanatos"));
-}
-
-void CTaskExplorer::LoadLanguage()
-{
-	qApp->removeTranslator(&m_Translator);
-	m_Translation.clear();
-
-	QString Lang = theConf->GetString("General/Language");
-	if(!Lang.isEmpty())
-	{
-		QString LangAux = Lang; // Short version as fallback
-		LangAux.truncate(LangAux.lastIndexOf('_'));
-
-		QString LangPath = QApplication::applicationDirPath() + "/translations/taskexplorer_";
-		bool bAux = false;
-		if(QFile::exists(LangPath + Lang + ".qm") || (bAux = QFile::exists(LangPath + LangAux + ".qm")))
-		{
-			QFile File(LangPath + (bAux ? LangAux : Lang) + ".qm");
-			File.open(QFile::ReadOnly);
-			m_Translation = File.readAll();
-		}
-
-		if(!m_Translation.isEmpty() && m_Translator.load((const uchar*)m_Translation.data(), m_Translation.size()))
-			qApp->installTranslator(&m_Translator);
-	}
 }
