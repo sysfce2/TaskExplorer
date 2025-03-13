@@ -131,10 +131,10 @@ void CTaskInfoView::ShowProcesses(const QList<CProcessPtr>& Processes)
 	OnTab(m_pTabs->currentIndex());
 }
 
-void CTaskInfoView::SellectThread(quint64 ThreadId)
+void CTaskInfoView::SelectThread(quint64 ThreadId)
 {
 	m_pTabs->setCurrentWidget(m_pThreadsView);
-	m_pThreadsView->SellectThread(ThreadId);
+	m_pThreadsView->SelectThread(ThreadId);
 }
 
 void CTaskInfoView::OnTab(int tabIndex)

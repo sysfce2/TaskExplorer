@@ -1013,7 +1013,7 @@ QString CWinThread::GetApartmentStateString() const
 	if (m_ApartmentState & OLETLS_INTHREADDETACH)
 		Info.append(tr("Inside thread detach"));
 	if (m_ApartmentState & OLETLS_CHANNELTHREADINITIALZED)
-		Info.append(tr("Channel thread initialzed"));
+		Info.append(tr("Channel thread initialized"));
 	if (m_ApartmentState & OLETLS_WOWTHREAD)
 		Info.append(tr("WOW Thread"));
 	if (m_ApartmentState & OLETLS_THREADUNINITIALIZING)

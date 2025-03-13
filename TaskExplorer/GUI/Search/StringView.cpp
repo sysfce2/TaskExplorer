@@ -117,7 +117,7 @@ void CStringView::OnDoubleClicked()
 	pEditor->setWindowTitle(tr("Memory Editor: %1 (%2) 0x%3").arg(pString->GetProcess()->GetName()).arg(pString->GetProcess()->GetProcessId()).arg(pString->GetBaseAddress(),0,16));
 	pEditor->setDevice(pDevice, pString->GetBaseAddress());
 	pEditor->show();
-	pEditor->sellect(pString->GetAddress(), pString->GetSize());
+	pEditor->select(pString->GetAddress(), pString->GetSize());
 }
 
 void CStringView::OnSaveString()

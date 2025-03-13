@@ -30,7 +30,7 @@ CTaskInfoWindow::CTaskInfoWindow(const QList<CProcessPtr>& Processes, quint64 Th
 
 	pTaskInfo->ShowProcesses(Processes);
 	if (ThreaId)
-		pTaskInfo->SellectThread(ThreaId);
+		pTaskInfo->SelectThread(ThreaId);
 
 	restoreGeometry(theConf->GetBlob("InfoWindow/Window_Geometry"));
 

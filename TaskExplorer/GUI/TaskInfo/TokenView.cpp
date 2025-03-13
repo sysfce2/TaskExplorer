@@ -154,9 +154,9 @@ CTokenView::CTokenView(QWidget *parent)
 		m_pAdvTrustLevel->addChild(m_pAdvTrustLevelName);
 	m_pAdvLogon = new QTreeWidgetItem(tr("Logon").split("|"));
 	m_pAdvanced->GetTree()->addTopLevelItem(m_pAdvLogon);
-		m_pAdvLogonSID = new QTreeWidgetItem(tr("Token login name").split("|"));
+		m_pAdvLogonSID = new QTreeWidgetItem(tr("Token login SID").split("|"));
 		m_pAdvLogon->addChild(m_pAdvLogonSID);
-		m_pAdvLogonName = new QTreeWidgetItem(tr("Token login SID").split("|"));
+		m_pAdvLogonName = new QTreeWidgetItem(tr("Token login name").split("|"));
 		m_pAdvLogon->addChild(m_pAdvLogonName);
 	m_pAdvProfile = new QTreeWidgetItem(tr("Profile").split("|"));
 	m_pAdvanced->GetTree()->addTopLevelItem(m_pAdvProfile);

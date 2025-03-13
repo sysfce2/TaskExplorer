@@ -4,7 +4,7 @@
 <context>
     <name>CAffinityDialog</name>
     <message>
-        <source>Affinity controlls which CPUs tasks are allowed to be executed on.</source>
+        <source>Affinity controls which CPUs tasks are allowed to be executed on.</source>
         <translation>限制被允许执行的CPU核心。</translation>
     </message>
     <message>
@@ -1774,8 +1774,8 @@ Modifiers:<byte value="xd"/>
         <translation>X</translation>
     </message>
     <message>
-        <source>Path/Command Line (with wildcards)|Execution|CPU Priority|CPU Affinity|CPU Affinity|I/O Priority|Page Priority|</source>
-        <translation>路径/命令行（带通配符）|执行|CPU优先级|CPU偏好|CPU偏好|读写优先级|页面优先级|</translation>
+        <source>Path/Command Line (with wildcards)|Execution|CPU Priority|CPU Affinity|I/O Priority|Page Priority|</source>
+        <translation>路径/命令行（带通配符）|执行|CPU优先级|CPU偏好|读写优先级|页面优先级|</translation>
     </message>
     <message>
         <source>Add new entry</source>
@@ -3485,7 +3485,7 @@ To change the limit adjust the option &apos;Options/ResultLimit&apos;.</source>
         <translation>服务不存在。</translation>
     </message>
     <message>
-        <source>Do you want to delete the sellected service</source>
+        <source>Do you want to delete the selected service</source>
         <translation>你想要删除选中的服务吗</translation>
     </message>
 </context>
@@ -6819,7 +6819,7 @@ A 64-bit dump will be created instead.</source>
         <translation>不能卸载驱动。</translation>
     </message>
     <message>
-        <source>Unable to unmap the section view at 0x</source>
+        <source>Unable to unmap the section view at 0x%1</source>
         <translation>不能在 0x 取消节视图的映射</translation>
     </message>
     <message>
@@ -7541,7 +7541,7 @@ A 64-bit dump will be created instead.</source>
         <translation>输入值</translation>
     </message>
     <message>
-        <source>Sellect data type:</source>
+        <source>Select data type:</source>
         <translation>选择数据类型:</translation>
     </message>
     <message>
@@ -7565,7 +7565,7 @@ A 64-bit dump will be created instead.</source>
         <translation>所有关键词</translation>
     </message>
     <message>
-        <source>Do you want to delete the sellected data</source>
+        <source>Do you want to delete the selected data</source>
         <translation>你想要删除所选数据吗</translation>
     </message>
 </context>
@@ -7654,11 +7654,11 @@ If you save the recovery information using this program, the additional failure 
         <translation>选择程序</translation>
     </message>
     <message>
-        <source>Do you want to delete the sellected trigger</source>
+        <source>Do you want to delete the selected trigger</source>
         <translation>你想要删除选定的触发器吗</translation>
     </message>
     <message>
-        <source>Sellect privilege to add:</source>
+        <source>Select privilege to add:</source>
         <translation>选择要添加的特权:</translation>
     </message>
     <message>
@@ -7670,7 +7670,7 @@ If you save the recovery information using this program, the additional failure 
         <translation>特权 &apos;%1&apos; 已经添加。</translation>
     </message>
     <message>
-        <source>Do you want to delete the sellected privileg</source>
+        <source>Do you want to delete the selected privileg</source>
         <translation>你想要删除选定的特权吗</translation>
     </message>
 </context>
@@ -8732,7 +8732,7 @@ If you save the recovery information using this program, the additional failure 
         <translation>刷新间隔:</translation>
     </message>
     <message>
-        <source>Retain parrent processes</source>
+        <source>Retain parent processes</source>
         <translation>保留父进程</translation>
     </message>
     <message>
@@ -8997,7 +8997,7 @@ If you save the recovery information using this program, the additional failure 
         <translation>恢复</translation>
     </message>
     <message>
-        <source>Subsequent faulures:</source>
+        <source>Subsequent failures:</source>
         <translation>随后的失败:</translation>
     </message>
     <message>

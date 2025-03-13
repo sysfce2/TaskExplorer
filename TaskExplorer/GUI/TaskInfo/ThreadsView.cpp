@@ -180,7 +180,7 @@ void CThreadsView::ShowProcesses(const QList<CProcessPtr>& Processes)
 	Refresh();
 }
 
-void CThreadsView::SellectThread(quint64 ThreadId)
+void CThreadsView::SelectThread(quint64 ThreadId)
 {
 	QModelIndex Index = m_pThreadModel->FindIndex(ThreadId);
 	QModelIndex ModelIndex = m_pSortProxy->mapFromSource(Index);
@@ -293,7 +293,7 @@ void CThreadsView::ShowStack(const CStackTracePtr& StackTrace)
 	m_pStackView->ShowStack(StackTrace);
 }
 
-QList<CTaskPtr> CThreadsView::GetSellectedTasks()
+QList<CTaskPtr> CThreadsView::GetSelectedTasks()
 {
 	QList<CTaskPtr> List;
 	foreach(const QModelIndex& Index, m_pThreadList->selectedRows())
@@ -452,7 +452,7 @@ void CThreadsView::OnUpdateHistory()
 void CThreadsView::OnThreadToken()
 {
 #ifdef WIN32
-	QList<CTaskPtr>	Tasks = GetSellectedTasks();
+	QList<CTaskPtr>	Tasks = GetSelectedTasks();
 	if (Tasks.count() != 1)
 		return;
 
@@ -479,7 +479,7 @@ void CThreadsView::OnThreadToken()
 void CThreadsView::OnWCT()
 {
 #ifdef WIN32
-	QList<CTaskPtr>	Tasks = GetSellectedTasks();
+	QList<CTaskPtr>	Tasks = GetSelectedTasks();
 	if (Tasks.count() != 1)
 		return;
 
@@ -495,7 +495,7 @@ void CThreadsView::OnWCT()
 void CThreadsView::OnPermissions()
 {
 #ifdef WIN32
-	QList<CTaskPtr>	Tasks = GetSellectedTasks();
+	QList<CTaskPtr>	Tasks = GetSelectedTasks();
 	if (Tasks.count() != 1)
 		return;
 

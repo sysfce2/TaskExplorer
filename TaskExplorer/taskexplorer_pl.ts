@@ -4,7 +4,7 @@
 <context>
     <name>CAffinityDialog</name>
     <message>
-        <source>Affinity controlls which CPUs tasks are allowed to be executed on.</source>
+        <source>Affinity controls which CPUs tasks are allowed to be executed on.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1760,7 +1760,7 @@ Modifiers:<byte value="xd"/>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Path/Command Line (with wildcards)|Execution|CPU Priority|CPU Affinity|CPU Affinity|I/O Priority|Page Priority|</source>
+        <source>Path/Command Line (with wildcards)|Execution|CPU Priority|CPU Affinity|I/O Priority|Page Priority|</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3468,7 +3468,7 @@ To change the limit adjust the option &apos;Options/ResultLimit&apos;.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Do you want to delete the sellected service</source>
+        <source>Do you want to delete the selected service</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -6785,7 +6785,7 @@ A 64-bit dump will be created instead.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Unable to unmap the section view at 0x</source>
+        <source>Unable to unmap the section view at 0x%1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -7511,7 +7511,7 @@ A 64-bit dump will be created instead.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Sellect data type:</source>
+        <source>Select data type:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -7535,7 +7535,7 @@ A 64-bit dump will be created instead.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Do you want to delete the sellected data</source>
+        <source>Do you want to delete the selected data</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -7618,11 +7618,11 @@ A 64-bit dump will be created instead.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Do you want to delete the sellected trigger</source>
+        <source>Do you want to delete the selected trigger</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Sellect privilege to add:</source>
+        <source>Select privilege to add:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -7634,7 +7634,7 @@ A 64-bit dump will be created instead.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Do you want to delete the sellected privileg</source>
+        <source>Do you want to delete the selected privileg</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -8793,7 +8793,7 @@ If you save the recovery information using this program, the additional failure 
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Retain parrent processes</source>
+        <source>Retain parent processes</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -8970,7 +8970,7 @@ If you save the recovery information using this program, the additional failure 
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Subsequent faulures:</source>
+        <source>Subsequent failures:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>

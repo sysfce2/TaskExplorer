@@ -62,7 +62,7 @@ public:
 
 	virtual bool Init();
 
-	//virtual QPair<QString, QString> SellectDriver();
+	//virtual QPair<QString, QString> SelectDriver();
 	//virtual STATUS InitDriver(QString DeviceName, QString FileName);
 	virtual STATUS InitHackerDriver();
 

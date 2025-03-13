@@ -793,13 +793,13 @@ VOID DestroyDotNetTraceQuery(
     PhFree(Context);
 }
 
-void CAssemblyEnum::AddNodes(CAssemblyListPtr& List, struct _PH_LIST* NodeList, quint64 ParrentId)
+void CAssemblyEnum::AddNodes(CAssemblyListPtr& List, struct _PH_LIST* NodeList, quint64 ParentId)
 {
 	for (ULONG i = 0; i < NodeList->Count; i++)
 	{
 		PDNA_NODE node = (PDNA_NODE)NodeList->Items[i];
 
-		List->AddAssembly(node->Id, ParrentId, QString::fromWCharArray(node->StructureText.Buffer, node->StructureText.Length / sizeof(wchar_t)),
+		List->AddAssembly(node->Id, ParentId, QString::fromWCharArray(node->StructureText.Buffer, node->StructureText.Length / sizeof(wchar_t)),
 			CastPhString(node->PathText, false), CastPhString(node->FlagsText, false), CastPhString(node->NativePathText, false));
 
 		if (node->Children)

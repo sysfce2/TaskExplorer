@@ -54,7 +54,7 @@ public slots:
 	void				OnTab(int tabIndex);
 	//void				ShowProcess(const CProcessPtr& pProcess);
 	void				ShowProcesses(const QList<CProcessPtr>& Processes);
-	void				SellectThread(quint64 ThreadId);
+	void				SelectThread(quint64 ThreadId);
 	void				Refresh();
 
 protected:
