@@ -172,7 +172,7 @@ void CDotNetView::OnAssemblies(const CAssemblyListPtr& Assemblies)
 
 		QVariantMap Item;
 		Item["ID"] = Assembly.ID;
-		Item["ParentID"] = Assembly.ParrentID;
+		Item["ParentID"] = Assembly.ParentID;
 
 		Item["Structure"] = Assembly.Structure;
 		Item["FileName"] = Assembly.FileName;

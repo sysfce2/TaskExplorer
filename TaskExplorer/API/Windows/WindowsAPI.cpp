@@ -155,11 +155,11 @@ CWindowsAPI::CWindowsAPI(QObject *parent) : CSystemAPI(parent)
 	m = new SWindowsAPI();
 }
 
-bool KernelProcessMonitor(quint64 ProcessId, quint64 ParrentId, const QString& FileName, const QString& CommandLine)
+bool KernelProcessMonitor(quint64 ProcessId, quint64 ParentId, const QString& FileName, const QString& CommandLine)
 {
 	QSharedPointer<CWinProcess> pProcess = theAPI->GetProcessByID(ProcessId, true).staticCast<CWinProcess>();
 	if (pProcess && !pProcess->IsFullyInitialized()) {
-		pProcess->SetParentId(ParrentId);
+		pProcess->SetParentId(ParentId);
 		pProcess->CloseHandle(); // close the handle such that we can re open it later and re scan teh process once its fully up
 	}
 
@@ -200,7 +200,7 @@ bool CWindowsAPI::Init()
 #ifdef _DEBUG
 	if (!PhIsExecutingInWow64() && theConf->GetBool("Options/UseHackerDriver", false))
 	{
-	//	QPair<QString, QString> Driver = SellectDriver();
+	//	QPair<QString, QString> Driver = SelectDriver();
 	//	InitDriver(Driver.first, Driver.second);
 		InitHackerDriver();
 	}
@@ -265,7 +265,7 @@ bool CWindowsAPI::Init()
 
 	m_SystemDir = CastPhString(PhGetSystemDirectory());
 
-	extern bool (*g_KernelProcessMonitor)(quint64 ProcessId, quint64 ParrentId, const QString& FileName, const QString& CommandLine);
+	extern bool (*g_KernelProcessMonitor)(quint64 ProcessId, quint64 ParentId, const QString& FileName, const QString& CommandLine);
 	g_KernelProcessMonitor = KernelProcessMonitor;
 	if (theConf->GetBool("Options/MonitorSys", false))
 		KphSetSystemMon(true);
@@ -304,7 +304,7 @@ bool CWindowsAPI::Init()
 	return true;
 }
 
-//QPair<QString, QString> CWindowsAPI::SellectDriver()
+//QPair<QString, QString> CWindowsAPI::SelectDriver()
 //{
 //	QString DeviceName;
 //	QString FileName = theConf->GetString("Options/DriverFile");
@@ -384,7 +384,7 @@ STATUS CWindowsAPI::InitHackerDriver()
 
 CWindowsAPI::~CWindowsAPI()
 {
-	extern bool (*g_KernelProcessMonitor)(quint64 ProcessId, quint64 ParrentId, const QString& FileName, const QString& CommandLine);
+	extern bool (*g_KernelProcessMonitor)(quint64 ProcessId, quint64 ParentId, const QString& FileName, const QString& CommandLine);
 	g_KernelProcessMonitor = NULL;
 
 	delete m_pEventMonitor;
@@ -1012,7 +1012,7 @@ bool CWindowsAPI::UpdateProcessList()
 
 	// parent retention
 	QMap<quint64, int> ChildCount;
-	if (theConf->GetBool("Options/EnableParrentRetention", true))
+	if (theConf->GetBool("Options/EnableParentRetention", true))
 	{
 		foreach(const CProcessPtr& pProcess, Processes) {
 			CProcessPtr pParent = Processes.value(pProcess->GetParentId());

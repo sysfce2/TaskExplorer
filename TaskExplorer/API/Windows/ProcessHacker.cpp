@@ -207,7 +207,7 @@ int InitPH(bool bSvc)
 	return 0;
 }
 
-bool (*g_KernelProcessMonitor)(quint64 ProcessId, quint64 ParrentId, const QString& FileName, const QString& CommandLine) = NULL;
+bool (*g_KernelProcessMonitor)(quint64 ProcessId, quint64 ParentId, const QString& FileName, const QString& CommandLine) = NULL;
 
 void (*g_KernelDebugLogger)(const QString& Output) = NULL;
 
@@ -231,7 +231,7 @@ static VOID NTAPI KsiCommsCallback(
 			if (g_KernelProcessMonitor) 
 			{
 				quint64 ProcessId = (quint64)Message->Kernel.ProcessCreate.TargetProcessId;
-				quint64 ParrentId = (quint64)Message->Kernel.ProcessCreate.ParentProcessId;
+				quint64 ParentId = (quint64)Message->Kernel.ProcessCreate.ParentProcessId;
 
 				QString FileName;
 				UNICODE_STRING fileName = { 0 };
@@ -247,7 +247,7 @@ static VOID NTAPI KsiCommsCallback(
 				if (NT_SUCCESS(KphMsgDynGetUnicodeString(Message, KphMsgFieldCommandLine, &commandLine)))
 					CommandLine = QString::fromWCharArray(commandLine.Buffer, commandLine.Length / sizeof(wchar_t));
 
-				msg->Reply.ProcessCreate.CreationStatus = g_KernelProcessMonitor(ProcessId, ParrentId, FileName, CommandLine) ? STATUS_SUCCESS : STATUS_ACCESS_DENIED;
+				msg->Reply.ProcessCreate.CreationStatus = g_KernelProcessMonitor(ProcessId, ParentId, FileName, CommandLine) ? STATUS_SUCCESS : STATUS_ACCESS_DENIED;
 			}
 			else
 				msg->Reply.ProcessCreate.CreationStatus = STATUS_SUCCESS;

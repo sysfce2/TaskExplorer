@@ -759,7 +759,7 @@ STATUS CWinModule::Unload(bool bForce)
 
         if (!NT_SUCCESS(status))
         {
-			return ERR(tr("Unable to unmap the section view at 0x").arg(QString::number(m_BaseAddress, 16)));
+			return ERR(tr("Unable to unmap the section view at 0x%1").arg(QString::number(m_BaseAddress, 16)));
         }
 
         break;

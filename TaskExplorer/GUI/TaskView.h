@@ -19,7 +19,7 @@ private slots:
 	void					OnPriority();
 
 protected:
-	virtual QList<CTaskPtr>	GetSellectedTasks() = 0;
+	virtual QList<CTaskPtr>	GetSelectedTasks() = 0;
 
 	virtual void			OnMenu(const QPoint& Point);
 

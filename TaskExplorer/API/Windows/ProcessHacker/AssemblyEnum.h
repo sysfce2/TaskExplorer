@@ -21,5 +21,5 @@ protected:
 	quint64				m_ProcessId;
 
 private:
-	static void			AddNodes(CAssemblyListPtr& List, struct _PH_LIST* NodeList, quint64 ParrentId = 0);
+	static void			AddNodes(CAssemblyListPtr& List, struct _PH_LIST* NodeList, quint64 ParentId = 0);
 };

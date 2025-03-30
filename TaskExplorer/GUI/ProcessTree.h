@@ -72,7 +72,7 @@ private slots:
 
 protected:
 	template <class T>
-	QList<T>					GetSellectedProcesses()
+	QList<T>					GetSelectedProcesses()
 	{
 		QList<T> List;
 		foreach(const QModelIndex& Index, m_pProcessList->selectedRows())
@@ -84,7 +84,7 @@ protected:
 		}
 		return List;
 	}
-	virtual QList<CTaskPtr>		GetSellectedTasks();
+	virtual QList<CTaskPtr>		GetSelectedTasks();
 
 	void						UpdateIndexWidget(int HistoryColumn, int CellHeight, QMap<quint64, CHistoryGraph*>& Graphs, QMap<quint64, QPair<QPointer<CHistoryWidget>, QPersistentModelIndex> >& History);
 
