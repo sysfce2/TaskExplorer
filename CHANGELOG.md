@@ -5,18 +5,31 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 
 
+## [1.6.3] - 2025-03-??
+
+### Added
+- added Turkish language (offhub)
+
+### Fixed
+- fixed some typos in the UI
+
+### Removed
+- removed duplicate CPU Affinity column from Persistence Options
+
+
+
 ## [1.6.2] - 2025-03-02
 
 ### Added
 - added driver DynData updater, on start when the current DynData is not compatible with the windows kernel TE will offer an option to update the DynData
   - Note: the updater extracts the DynData from regular SystemInformer canary update packages.
-- added preparations (not enebled) to use the old driver on windows 7
+- added preparations (not enabled) to use the old driver on windows 7
 
 ### Changed
 - moved translations to translations.7z
 
 ### Fixed
-- incompatybility witn windows 7 introduced in 1.16.1
+- incompatibility witn windows 7 introduced in 1.16.1
 - fixed crash in module search window
 - fixed performance issue with codepage detection
 
@@ -28,7 +41,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - added ARM64 driver
 
 ### Changed
-- updated code to be qt6 comaptible
+- updated code to be qt6 compatible
 - greately improved dark mode
 - improved driver statis information on startup
 - updated MiscHelpers.dll, improved finder
@@ -378,7 +391,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Changed
 - cleaned up PH directory
-- improved process display for the case when multiple processes are sellected
+- improved process display for the case when multiple processes are selected
 - now using https://github.com/microsoft/krabsetw to monitor ETW events
 - reworked socket process association
 - when opening finder the search term ist selected such it can be replaced quickly
@@ -529,7 +542,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Fixed
 - fixed issues with changing graph length
-- fixed bad color contrast of sellected items
+- fixed bad color contrast of selected items
 - fixed a crash (race condition) when closing
 - fixed issues with cycle based cpu usage calculation
 - fixed major issue with process stat display
@@ -547,7 +560,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - added listing of unloaded DLLs (shown in gray in modules tab)
 - added "Services referencing" feature to modules tab -> column
 - added optional CPU cycle based CPU usage calculation
-- show merged informations when more than one process is sellected
+- show merged informations when more than one process is selected
 - added search (highlight) feature to the stack trace list
 - added Dangerous Flags from process hacker to the token tab
 - added job limits informations tab to the job tab
@@ -649,7 +662,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Fixed
 - memory view being unnececerly refreshed
-- fixed dpi scling issue
+- fixed dpi scaling issue
 
 
 
@@ -795,7 +808,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - improved global network traffic logging now using GetIfTable2 instead of ETW events
 - improved MMapIO display now it works as expected and disk IO got its own graph
 - all files list now works for non enevated users
-- driver tab now uses NtQuerySystemInformation(SystemModuleInformation to enumerate drivers
+- driver tab now uses NtQuerySystemInformation(SystemModuleInformation) to enumerate drivers
 
 ### Fixed
 - memory leak when running without unelevated and vieving all files list

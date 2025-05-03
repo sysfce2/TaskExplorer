@@ -117,7 +117,7 @@ void CTaskView::AddPriorityItemsToMenu(EPriorityType Style)
 
 void CTaskView::OnMenu(const QPoint& Point)
 {
-	QList<CTaskPtr>	Tasks = GetSellectedTasks();
+	QList<CTaskPtr>	Tasks = GetSelectedTasks();
 
 	int SuspendedCount = 0;
 	bool Boost = false;
@@ -185,7 +185,7 @@ void CTaskView::OnTaskAction()
 			return;
 	}
 
-	QList<CTaskPtr>	Tasks = GetSellectedTasks();
+	QList<CTaskPtr>	Tasks = GetSelectedTasks();
 
 	QList<STATUS> Errors;
 	int Force = -1;
@@ -230,7 +230,7 @@ retry:
 
 void CTaskView::OnAffinity()
 {
-	QList<CTaskPtr>	Tasks = GetSellectedTasks();
+	QList<CTaskPtr>	Tasks = GetSelectedTasks();
 	if (Tasks.isEmpty())
 		return;
 
@@ -285,7 +285,7 @@ void CTaskView::OnBoost()
 {
 	bool Boost = m_pBoost->isChecked();
 
-	QList<CTaskPtr>	Tasks = GetSellectedTasks();
+	QList<CTaskPtr>	Tasks = GetSelectedTasks();
 
 	QList<STATUS> Errors;
 	foreach(const CTaskPtr& pTask, Tasks)
@@ -302,7 +302,7 @@ void CTaskView::OnPriority()
 {
 	SPriority Priority = m_pPriorityLevels[(QAction*)sender()];
 
-	QList<CTaskPtr>	Tasks = GetSellectedTasks();
+	QList<CTaskPtr>	Tasks = GetSelectedTasks();
 
 	QList<STATUS> Errors;
 	foreach(const CTaskPtr& pTask, Tasks)

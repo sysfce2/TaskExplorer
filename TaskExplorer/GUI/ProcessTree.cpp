@@ -412,7 +412,7 @@ void CProcessTree::SetTree(bool bSet)
 
 void CProcessTree::OnShowProperties()
 {
-	CTaskInfoWindow* pTaskInfoWindow = new CTaskInfoWindow(GetSellectedProcesses<CProcessPtr>());
+	CTaskInfoWindow* pTaskInfoWindow = new CTaskInfoWindow(GetSelectedProcesses<CProcessPtr>());
 	pTaskInfoWindow->show();
 }
 
@@ -426,12 +426,12 @@ void CProcessTree::OnCurrentChanged(const QModelIndex &current, const QModelInde
 
 void CProcessTree::OnSelectionChanged(const QItemSelection& Selected, const QItemSelection& Deselected)
 {
-	emit ProcessesSelected(GetSellectedProcesses<CProcessPtr>());
+	emit ProcessesSelected(GetSelectedProcesses<CProcessPtr>());
 }
 
-QList<CTaskPtr> CProcessTree::GetSellectedTasks() 
+QList<CTaskPtr> CProcessTree::GetSelectedTasks() 
 {
-	return GetSellectedProcesses<CTaskPtr>(); 
+	return GetSelectedProcesses<CTaskPtr>(); 
 }
 
 void CProcessTree::OnToolTipCallback(const QVariant& ID, QString& ToolTip)
@@ -1047,7 +1047,7 @@ void CProcessTree::OnRunAsThis()
 void CProcessTree::OnPermissions()
 {
 #ifdef WIN32
-	QList<CTaskPtr>	Tasks = GetSellectedTasks();
+	QList<CTaskPtr>	Tasks = GetSelectedTasks();
 	if (Tasks.count() != 1)
 		return;
 

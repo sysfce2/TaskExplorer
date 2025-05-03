@@ -31,7 +31,7 @@ CDriverWindow::CDriverWindow(QWidget *parent)
 		ui.autoSelection->setVisible(true);
 		ui.deviceName->setReadOnly(true);
 
-		QPair<QString, QString> Driver = ((CWindowsAPI*)theAPI)->SellectDriver();
+		QPair<QString, QString> Driver = ((CWindowsAPI*)theAPI)->SelectDriver();
 		ui.fileName->setCurrentIndex(ui.fileName->findData(Driver.second));
 		ui.deviceName->setText(Driver.first);
 	}
@@ -121,7 +121,7 @@ void CDriverWindow::OnDriverFile()
 		ui.deviceName->setReadOnly(true);
 
 		m_HoldValues = true;
-		QPair<QString, QString> Driver = ((CWindowsAPI*)theAPI)->SellectDriver();
+		QPair<QString, QString> Driver = ((CWindowsAPI*)theAPI)->SelectDriver();
 		ui.fileName->setCurrentIndex(ui.fileName->findData(Driver.second));
 		ui.deviceName->setText(Driver.first);
 		m_HoldValues = false;

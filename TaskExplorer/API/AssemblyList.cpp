@@ -8,11 +8,11 @@ CAssemblyList::CAssemblyList()
 
 }
 
-void CAssemblyList::AddAssembly(quint64 ID, quint64 ParrentID, QString Structure, QString FileName, QString Flags, QString NativePath)
+void CAssemblyList::AddAssembly(quint64 ID, quint64 ParentID, QString Structure, QString FileName, QString Flags, QString NativePath)
 {
 	SAssembly Assembly;
 	Assembly.ID = ID;
-	Assembly.ParrentID = ParrentID;
+	Assembly.ParentID = ParentID;
 	Assembly.Structure = Structure;
 	Assembly.FileName = FileName;
 	Assembly.Flags = Flags;

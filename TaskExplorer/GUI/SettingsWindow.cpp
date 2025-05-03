@@ -117,7 +117,7 @@ CSettingsWindow::CSettingsWindow(QWidget *parent)
 	ui.processName->addItem(tr("Binary name only"), 0);
 	ui.processName->setCurrentIndex(ui.processName->findData(theConf->GetInt("Options/ShowProcessDescr", 1)));
 
-	ui.chkParents->setChecked(theConf->GetBool("Options/EnableParrentRetention", true));
+	ui.chkParents->setChecked(theConf->GetBool("Options/EnableParentRetention", true));
 	ui.chkGetRefServices->setChecked(theConf->GetBool("Options/GetServicesRefModule", true));
 	ui.chkTraceDLLs->setChecked(theConf->GetBool("Options/TraceUnloadedModules", false));
 
@@ -228,7 +228,7 @@ void CSettingsWindow::apply()
 	
 	theConf->SetValue("Options/ShowProcessDescr", ui.processName->currentData());
 
-	theConf->SetValue("Options/EnableParrentRetention", ui.chkParents->isChecked());
+	theConf->SetValue("Options/EnableParentRetention", ui.chkParents->isChecked());
 	theConf->SetValue("Options/GetServicesRefModule", ui.chkGetRefServices->isChecked());
 	theConf->SetValue("Options/TraceUnloadedModules", ui.chkTraceDLLs->isChecked());
 

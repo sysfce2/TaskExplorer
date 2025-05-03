@@ -213,7 +213,7 @@
            <item row="13" column="1">
             <widget class="QCheckBox" name="chkParents">
              <property name="text">
-              <string>Retain parrent processes</string>
+              <string>Retain parent processes</string>
              </property>
             </widget>
            </item>
