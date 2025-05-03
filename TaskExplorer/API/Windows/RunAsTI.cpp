@@ -249,6 +249,6 @@ void create_process_as_trusted_installer(std::wstring command_line)
 	}
 	catch (exception e)
 	{
-		wcout << e.what() << endl;
+		MessageBoxA(nullptr, e.what(), "Error", MB_OK | MB_ICONERROR);
 	}
 }

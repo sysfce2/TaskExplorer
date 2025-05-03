@@ -11,6 +11,7 @@
 #include "../QtSingleApp/src/qtsingleapplication.h"
 #include "../MiscHelpers/Common/qRC4.h"
 #include "../../MiscHelpers/Common/CheckableMessageBox.h"
+#include "..\ProcessHacker\kphlib\include\sistatus.h"
 
 int SkipUacRun(bool test_only = false);
 #endif
@@ -123,10 +124,6 @@ int main(int argc, char *argv[])
 	InitPH(bSvc);
 
 	STATUS DrvStatus = OK;
-	if (theConf->GetBool("OptionsKSI/KsiEnable", true) && IsElevated() && !PhIsExecutingInWow64())
-	{
-		DrvStatus = InitKSI(AppDir);
-	}
 
 #ifdef Q_OS_WIN
 #ifndef _DEBUG
@@ -141,9 +138,17 @@ int main(int argc, char *argv[])
 #endif // Q_OS_WIN
 
 	QtSingleApplication* pApp = NULL;
-	if (bSvc || bWrk)	
+	if (bSvc || bWrk) 
+	{
 		new QCoreApplication(argc, argv);
-	else {
+	}
+	else 
+	{
+		if (theConf->GetBool("OptionsKSI/KsiEnable", true) && IsElevated() && !PhIsExecutingInWow64())
+		{
+			DrvStatus = InitKSI(AppDir);
+		}
+
 #ifdef Q_OS_WIN
 		SetProcessDPIAware();
 #endif // Q_OS_WIN 
@@ -174,7 +179,7 @@ int main(int argc, char *argv[])
 			Message = CTaskExplorer::tr("Failed to update DynData, %1, Error: 0x%2 (%3).\n"
 				"Do you want to continue anyways (Ok), or terminate (Cancel)?").arg(DrvStatus.GetText()).arg((quint32)DrvStatus.GetStatus(), 8, 16, QChar('0')).arg(CastPhString(PhGetNtMessage(DrvStatus.GetStatus())));
 		}
-		else if (DrvStatus.GetStatus() == STATUS_UNKNOWN_REVISION || DynDataUpdate != 0) 
+		else if (DrvStatus.GetStatus() == STATUS_SI_DYNDATA_UNSUPPORTED_KERNEL || DrvStatus.GetStatus() == STATUS_UNKNOWN_REVISION || DynDataUpdate != 0) 
 		{
 			QString windowsVersion = QString::fromWCharArray(WindowsVersionString);
 			QString kernelVersion = CastPhString(KsiGetKernelVersionString());

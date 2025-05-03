@@ -530,6 +530,7 @@ NTSTATUS PhGetProcedureAddressRemote(
         }
     }
 
+#if 0 // CAUTION: this is very very slow for large processes
     if (!context.DllBase)
     {
         status = PhEnumProcessModulesLimited(
@@ -538,6 +539,7 @@ NTSTATUS PhGetProcedureAddressRemote(
             &context
             );
     }
+#endif
 
     if (!context.DllBase)
     {

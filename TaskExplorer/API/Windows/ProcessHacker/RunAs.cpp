@@ -648,13 +648,13 @@ BOOLEAN PhMwpOnNotify(
         }
 		else if (SelectedRunAsMode == RUNAS_MODE_SYS)
 		{
-			NTSTATUS status = STATUS_SUCCESS;
 			//NTSTATUS status = RunAsTrustedInstaller(runFileDlg->lpszFile);
 
-			QStringList Arguments;
+			NTSTATUS status = STATUS_SUCCESS;
+            QStringList Arguments;
 			Arguments.append("-runasti");
 			Arguments.append(QString::fromWCharArray(runFileDlg->lpszFile));
-			QProcess::execute(QCoreApplication::applicationFilePath(), Arguments);
+			QProcess::startDetached(QCoreApplication::applicationFilePath(), Arguments);
 
             if (NT_SUCCESS(status))
             {

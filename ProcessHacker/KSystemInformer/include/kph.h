@@ -326,12 +326,10 @@ BOOLEAN KphInDeveloperMode(
         return FALSE;
     }
 
-#ifndef _DEBUG
-    if (!KD_DEBUGGER_ENABLED)
-    {
-        return FALSE;
-    }
-#endif
+    //if (!KD_DEBUGGER_ENABLED)
+    //{
+    //    return FALSE;
+    //}
 
     if (!FlagOn(KphCodeIntegrityInfo.CodeIntegrityOptions,
                 CODEINTEGRITY_OPTION_TESTSIGN))

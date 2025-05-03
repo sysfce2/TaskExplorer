@@ -438,6 +438,13 @@ BOOLEAN NTAPI PhpWalkThreadStackCallback(_In_ PPH_THREAD_STACK_FRAME StackFrame,
 void CStackProviderJob::Run(struct SSymbolProvider* m)
 {
 	this->m = m;
+	if (m->ThreadId != (HANDLE)m_ThreadId)
+	{
+		if (m->ThreadHandle) {
+			NtClose(m->ThreadHandle);
+			m->ThreadHandle = NULL;
+		}
+	}
 	m->ThreadId = (HANDLE)m_ThreadId;
 
 	m_StackTrace = CStackTracePtr(new CStackTrace(m_ProcessId, m_ThreadId));
