@@ -192,6 +192,10 @@ NTSTATUS DriverEntry(
         RtlZeroMemory(&KphCodeIntegrityInfo, sizeof(KphCodeIntegrityInfo));
     }
 
+#ifdef IS_KTE
+    KphInitializeParameters(RegistryPath);
+#endif
+
     if (KphInDeveloperMode())
     {
         KphTracePrint(TRACE_LEVEL_INFORMATION, GENERAL, "Developer Mode");
@@ -201,7 +205,9 @@ NTSTATUS DriverEntry(
 
     KphObjectInitialize();
 
+#ifndef IS_KTE
     KphInitializeParameters(RegistryPath);
+#endif
 
     status = KphInitializeAlloc();
     if (!NT_SUCCESS(status))

@@ -314,6 +314,9 @@ extern BOOLEAN KphIgnoreProtectionsSuppressed;
 extern BOOLEAN KphIgnoreTestSigningEnabled;
 extern SYSTEM_SECUREBOOT_INFORMATION KphSecureBootInfo;
 extern SYSTEM_CODEINTEGRITY_INFORMATION KphCodeIntegrityInfo;
+#ifdef IS_KTE
+extern KPH_PARAMETER_FLAGS KphParameterFlags;
+#endif
 
 FORCEINLINE
 BOOLEAN KphInDeveloperMode(
@@ -326,10 +329,18 @@ BOOLEAN KphInDeveloperMode(
         return FALSE;
     }
 
-    //if (!KD_DEBUGGER_ENABLED)
-    //{
-    //    return FALSE;
-    //}
+#ifdef IS_KTE
+    //
+    // When the system is in test signing mode, without secure boot,
+    // determine based on a registry parameter if to enforce our own security.
+    //
+    if (!KphParameterFlags.AllowDebugging)
+#else
+    if (!KD_DEBUGGER_ENABLED)
+#endif
+    {
+        return FALSE;
+    }
 
     if (!FlagOn(KphCodeIntegrityInfo.CodeIntegrityOptions,
                 CODEINTEGRITY_OPTION_TESTSIGN))
@@ -370,7 +381,9 @@ BOOLEAN KphTestSigningEnabled(
 
 extern PUNICODE_STRING KphAltitude;
 extern PUNICODE_STRING KphPortName;
+#ifndef IS_KTE
 extern KPH_PARAMETER_FLAGS KphParameterFlags;
+#endif
 
 _IRQL_requires_max_(PASSIVE_LEVEL)
 VOID KphCleanupParameters(

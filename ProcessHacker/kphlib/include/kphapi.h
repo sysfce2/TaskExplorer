@@ -11,6 +11,8 @@
 
 #pragma once
 
+#define IS_KTE
+
 #ifdef _KERNEL_MODE
 #define PHNT_MODE PHNT_MODE_KERNEL
 #endif
@@ -690,7 +692,12 @@ typedef union _KPH_PARAMETER_FLAGS
         ULONG DisableImageLoadProtection : 1;
         ULONG RandomizedPoolTag : 1;
         ULONG DynDataNoEmbedded : 1;
+#ifndef IS_KTE
         ULONG Reserved : 29;
+#else
+        ULONG Reserved : 28;
+        ULONG AllowDebugging : 1;
+#endif
     };
 } KPH_PARAMETER_FLAGS, *PKPH_PARAMETER_FLAGS;
 

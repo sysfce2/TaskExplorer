@@ -41,6 +41,7 @@ typedef const KPH_KEY* PCKPH_KEY;
 KPH_PROTECTED_DATA_SECTION_RO_PUSH();
 static const KPH_KEY KphpPublicKeys[] =
 {
+#ifdef IS_KTE
     {
         KphKeyTypeProd, // TE
         {
@@ -80,6 +81,7 @@ static const KPH_KEY KphpPublicKeys[] =
             0xC0, 0xA8, 0x4A, 0x10, 0x06, 0xC2, 0x6B, 0x39, 0xA6, 0x0C, 0xE1
         }
     },
+#endif
     {
         KphKeyTypeProd, // kph
         {
@@ -130,7 +132,7 @@ static const KPH_KEY KphpPublicKeys[] =
             0x6F, 0xD6, 0x88, 0x03, 0x23, 0xFB, 0x82, 0x62, 0x86, 0xFF, 0x59
         }
     }
-#if 0
+#ifndef IS_KTE
     ,
     {
         KphKeyTypeTest, // kph-dev

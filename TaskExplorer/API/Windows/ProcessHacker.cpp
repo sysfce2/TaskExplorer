@@ -692,8 +692,10 @@ STATUS InitKSI(const QString& AppDir)
 	config.Flags.Flags = 0;
 #ifdef _DEBUG 
 	config.Flags.DisableImageLoadProtection = theConf->GetBool("OptionsKSI/DisableImageLoadProtection", true);
+	config.Flags.AllowDebugging = theConf->GetBool("OptionsKSI/AllowDebugging", true);
 #else
 	config.Flags.DisableImageLoadProtection = theConf->GetBool("OptionsKSI/DisableImageLoadProtection", false);
+	config.Flags.AllowDebugging = theConf->GetBool("OptionsKSI/AllowDebugging", false);
 #endif
 	config.Flags.RandomizedPoolTag = theConf->GetBool("OptionsKSI/RandomizedPoolTag", false);
 	config.Flags.DynDataNoEmbedded = theConf->GetBool("OptionsKSI/DynDataNoEmbedded", false);
@@ -881,7 +883,6 @@ STATUS TryUpdateDynData(const QString& AppDir)
 		Status = ERR(Message, STATUS_UNSUCCESSFUL);
 		Progress.OnProgressMessage(Message);
 		QTimer::singleShot(3000, [&] {Progress.close();});
-		Progress.close();
 	};
 
 	auto ApplyUpdate = [&](const QString& FileName){
@@ -994,7 +995,7 @@ STATUS TryUpdateDynData(const QString& AppDir)
 		QUrl Url(sUrl);
 		
 		QNetworkRequest Request(Url);
-		//Request.setAttribute(QNetworkRequest::RedirectPolicyAttribute, QNetworkRequest::NoLessSafeRedirectPolicy);
+		Request.setAttribute(QNetworkRequest::RedirectPolicyAttribute, QNetworkRequest::NoLessSafeRedirectPolicy);
 
 		Reply.reset(Manager.get(Request));
 
@@ -1005,8 +1006,10 @@ STATUS TryUpdateDynData(const QString& AppDir)
 				FailWithMessage(CTaskExplorer::tr("Update Check Failed, Error: %1").arg(Error));
 				return;
 			}
+			//QString Location = Reply->header(QNetworkRequest::LocationHeader).toString();
 
-			QVariantMap Data = QJsonDocument::fromJson(Reply->readAll()).toVariant().toMap();
+			QByteArray Json = Reply->readAll();
+			QVariantMap Data = QJsonDocument::fromJson(Json).toVariant().toMap();
 			QString BinUrl = Data["bin_url"].toString();
 			if (BinUrl.isEmpty()) {
 				FailWithMessage(CTaskExplorer::tr("Update Check Failed, Error: Unrecognized Reply"));

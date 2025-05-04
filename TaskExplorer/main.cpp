@@ -217,7 +217,7 @@ int main(int argc, char *argv[])
 		{
 			DrvStatus = TryUpdateDynData(AppDir);
 			if (DrvStatus.IsError()) {
-				QMessageBox::critical(NULL, "TaskExplorer", CTaskExplorer::tr("Failed to update DynData, %1, Error: 0x%2 (%3).").arg(DrvStatus.GetText()));
+				QMessageBox::critical(NULL, "TaskExplorer", CTaskExplorer::tr("Failed to update DynData, %1.").arg(DrvStatus.GetText()));
 				DynDataUpdate = -1;
 			}
 			else {

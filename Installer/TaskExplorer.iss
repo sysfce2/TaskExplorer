@@ -68,7 +68,7 @@ Source: "license.txt"; DestDir: "{app}"; MinVersion: 0.0,5.0;
 ;Source: "changelog.txt"; DestDir: "{app}"; MinVersion: 0.0,5.0; 
 
 ; Only if portable.
-Source: ".\TaskExplorer.ini"; DestDir: "{app}"; Flags: ignoreversion onlyifdoesntexist; Check: IsPortable
+Source: ".\TaskExplorer.ini"; DestDir: "{app}\x64"; Flags: ignoreversion onlyifdoesntexist; Check: IsPortable
 
 [Icons]
 Name: "{group}\TaskExplorer"; Filename: "{app}\x86\TaskExplorer.exe"; MinVersion: 0.0,5.0; 

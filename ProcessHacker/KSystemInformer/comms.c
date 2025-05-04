@@ -1373,15 +1373,17 @@ VOID KphpMessageQueueThread (
                                       NULL,
                                       TRUE,
                                       item->TargetClientProcess);
-        //if (!NT_SUCCESS(status))
-        //{
-        //    KphTracePrint(TRACE_LEVEL_VERBOSE,
-        //                  COMMS,
-        //                  "Failed to send message (%lu - %!TIME!): %!STATUS!",
-        //                  (ULONG)item->Message->Header.MessageId,
-        //                  item->Message->Header.TimeStamp.QuadPart,
-        //                  status);
-        //}
+#ifndef IS_KTE
+        if (!NT_SUCCESS(status))
+        {
+            KphTracePrint(TRACE_LEVEL_VERBOSE,
+                          COMMS,
+                          "Failed to send message (%lu - %!TIME!): %!STATUS!",
+                          (ULONG)item->Message->Header.MessageId,
+                          item->Message->Header.TimeStamp.QuadPart,
+                          status);
+        }
+#endif
 
         KphpFreeMessageQueueItem(item);
     }
@@ -1639,15 +1641,17 @@ VOID KphCommsStop(
                                           NULL,
                                           TRUE,
                                           item->TargetClientProcess);
-            //if (!NT_SUCCESS(status))
-            //{
-            //    KphTracePrint(TRACE_LEVEL_VERBOSE,
-            //                  COMMS,
-            //                  "Failed to send message (%lu - %!TIME!): %!STATUS!",
-            //                  (ULONG)item->Message->Header.MessageId,
-            //                  item->Message->Header.TimeStamp.QuadPart,
-            //                  status);
-            //}
+#ifndef IS_KTE
+            if (!NT_SUCCESS(status))
+            {
+                KphTracePrint(TRACE_LEVEL_VERBOSE,
+                              COMMS,
+                              "Failed to send message (%lu - %!TIME!): %!STATUS!",
+                              (ULONG)item->Message->Header.MessageId,
+                              item->Message->Header.TimeStamp.QuadPart,
+                              status);
+            }
+#endif
 
             KphpFreeMessageQueueItem(item);
 
