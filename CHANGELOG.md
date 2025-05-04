@@ -5,13 +5,19 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 
 
-## [1.6.3] - 2025-03-??
+## [1.6.3] - 2025-05-03
 
 ### Added
 - added Turkish language (offhub)
 
+### Changed
+- improved berformance with very big processes
+- updated dyndata for latest windows
+
 ### Fixed
 - fixed some typos in the UI
+- fixed issue with stack traces introduced 1.6.1
+- fixed issue with run as Trusted Installer or as this user
 
 ### Removed
 - removed duplicate CPU Affinity column from Persistence Options
