@@ -4896,7 +4896,7 @@ Do you want to continue anyways (Ok), or terminate (Cancel)?</source>
     </message>
     <message>
         <source>Failed to update DynData, %1, Error: 0x%2 (%3).</source>
-        <translation>DynData güncellenemedi, %1, Hata: 0x%2 (%3).</translation>
+        <translation type="vanished">DynData güncellenemedi, %1, Hata: 0x%2 (%3).</translation>
     </message>
     <message>
         <source>Failed to open archive.</source>
@@ -4989,6 +4989,10 @@ Do you want to continue anyways (Ok), or terminate (Cancel)?</source>
     <message>
         <source>All columns</source>
         <translation>Tüm sütunlar</translation>
+    </message>
+    <message>
+        <source>Failed to update DynData, %1.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -7537,7 +7541,7 @@ Bunun yerine 64-bit bir döküm oluşturulacak.</translation>
     </message>
     <message>
         <source>Select data type:</source>
-        <translation>Veri türü seç:</translation>
+        <translation type="vanished">Veri türü seç:</translation>
     </message>
     <message>
         <source>String</source>
@@ -7562,6 +7566,10 @@ Bunun yerine 64-bit bir döküm oluşturulacak.</translation>
     <message>
         <source>Do you want to delete the selected data</source>
         <translation>Seçili verileri silmek istiyor musunuz?</translation>
+    </message>
+    <message>
+        <source>Sellect data type:</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -7808,7 +7816,7 @@ If you save the recovery information using this program, the additional failure 
     </message>
     <message>
         <source>Channel thread initialzed</source>
-        <translation>İs parçacığı kanalı ilklendirildi</translation>
+        <translation type="vanished">İs parçacığı kanalı ilklendirildi</translation>
     </message>
     <message>
         <source>WOW Thread</source>
@@ -7937,6 +7945,10 @@ If you save the recovery information using this program, the additional failure 
     <message>
         <source> - %1</source>
         <translation> - %1</translation>
+    </message>
+    <message>
+        <source>Channel thread initialized</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

@@ -4,8 +4,8 @@
 <context>
     <name>CAffinityDialog</name>
     <message>
-        <source>Affinity controls which CPUs tasks are allowed to be executed on.</source>
-        <translation>限制被允许执行的CPU核心。</translation>
+        <source>Affinity controlls which CPUs tasks are allowed to be executed on.</source>
+        <translation type="vanished">限制被允许执行的CPU核心。</translation>
     </message>
     <message>
         <source>CPU %1</source>
@@ -22,6 +22,10 @@
     <message>
         <source>CPU Affinity for: %1</source>
         <translation>CPU核心偏好: %1</translation>
+    </message>
+    <message>
+        <source>Affinity controls which CPUs tasks are allowed to be executed on.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -1774,12 +1778,16 @@ Modifiers:<byte value="xd"/>
         <translation>X</translation>
     </message>
     <message>
-        <source>Path/Command Line (with wildcards)|Execution|CPU Priority|CPU Affinity|I/O Priority|Page Priority|</source>
-        <translation>路径/命令行（带通配符）|执行|CPU优先级|CPU偏好|读写优先级|页面优先级|</translation>
+        <source>Path/Command Line (with wildcards)|Execution|CPU Priority|CPU Affinity|CPU Affinity|I/O Priority|Page Priority|</source>
+        <translation type="vanished">路径/命令行（带通配符）|执行|CPU优先级|CPU偏好|CPU偏好|读写优先级|页面优先级|</translation>
     </message>
     <message>
         <source>Add new entry</source>
         <translation>添加新实体</translation>
+    </message>
+    <message>
+        <source>Path/Command Line (with wildcards)|Execution|CPU Priority|CPU Affinity|I/O Priority|Page Priority|</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -3485,8 +3493,12 @@ To change the limit adjust the option &apos;Options/ResultLimit&apos;.</source>
         <translation>服务不存在。</translation>
     </message>
     <message>
+        <source>Do you want to delete the sellected service</source>
+        <translation type="vanished">你想要删除选中的服务吗</translation>
+    </message>
+    <message>
         <source>Do you want to delete the selected service</source>
-        <translation>你想要删除选中的服务吗</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -4907,10 +4919,6 @@ Do you want to continue anyways (Ok), or terminate (Cancel)?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Failed to update DynData, %1, Error: 0x%2 (%3).</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Failed to open archive.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -5000,6 +5008,10 @@ Do you want to continue anyways (Ok), or terminate (Cancel)?</source>
     </message>
     <message>
         <source>All columns</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to update DynData, %1.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -6819,12 +6831,16 @@ A 64-bit dump will be created instead.</source>
         <translation>不能卸载驱动。</translation>
     </message>
     <message>
-        <source>Unable to unmap the section view at 0x%1</source>
-        <translation>不能在 0x 取消节视图的映射</translation>
+        <source>Unable to unmap the section view at 0x</source>
+        <translation type="vanished">不能在 0x 取消节视图的映射</translation>
     </message>
     <message>
         <source>Unknown module type!</source>
         <translation>未知模块类型！</translation>
+    </message>
+    <message>
+        <source>Unable to unmap the section view at 0x%1</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -7541,7 +7557,7 @@ A 64-bit dump will be created instead.</source>
         <translation>输入值</translation>
     </message>
     <message>
-        <source>Select data type:</source>
+        <source>Sellect data type:</source>
         <translation>选择数据类型:</translation>
     </message>
     <message>
@@ -7565,8 +7581,12 @@ A 64-bit dump will be created instead.</source>
         <translation>所有关键词</translation>
     </message>
     <message>
+        <source>Do you want to delete the sellected data</source>
+        <translation type="vanished">你想要删除所选数据吗</translation>
+    </message>
+    <message>
         <source>Do you want to delete the selected data</source>
-        <translation>你想要删除所选数据吗</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -7654,12 +7674,12 @@ If you save the recovery information using this program, the additional failure 
         <translation>选择程序</translation>
     </message>
     <message>
-        <source>Do you want to delete the selected trigger</source>
-        <translation>你想要删除选定的触发器吗</translation>
+        <source>Do you want to delete the sellected trigger</source>
+        <translation type="vanished">你想要删除选定的触发器吗</translation>
     </message>
     <message>
-        <source>Select privilege to add:</source>
-        <translation>选择要添加的特权:</translation>
+        <source>Sellect privilege to add:</source>
+        <translation type="vanished">选择要添加的特权:</translation>
     </message>
     <message>
         <source>Unable to open LSA policy, error: %1</source>
@@ -7670,8 +7690,20 @@ If you save the recovery information using this program, the additional failure 
         <translation>特权 &apos;%1&apos; 已经添加。</translation>
     </message>
     <message>
+        <source>Do you want to delete the sellected privileg</source>
+        <translation type="vanished">你想要删除选定的特权吗</translation>
+    </message>
+    <message>
+        <source>Do you want to delete the selected trigger</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Select privilege to add:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Do you want to delete the selected privileg</source>
-        <translation>你想要删除选定的特权吗</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -7810,7 +7842,7 @@ If you save the recovery information using this program, the additional failure 
     </message>
     <message>
         <source>Channel thread initialzed</source>
-        <translation>管道线程初始化</translation>
+        <translation type="vanished">管道线程初始化</translation>
     </message>
     <message>
         <source>WOW Thread</source>
@@ -7939,6 +7971,10 @@ If you save the recovery information using this program, the additional failure 
     <message>
         <source> - %1</source>
         <translation> - %1</translation>
+    </message>
+    <message>
+        <source>Channel thread initialized</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -8732,8 +8768,8 @@ If you save the recovery information using this program, the additional failure 
         <translation>刷新间隔:</translation>
     </message>
     <message>
-        <source>Retain parent processes</source>
-        <translation>保留父进程</translation>
+        <source>Retain parrent processes</source>
+        <translation type="vanished">保留父进程</translation>
     </message>
     <message>
         <source>Process options</source>
@@ -8875,6 +8911,10 @@ If you save the recovery information using this program, the additional failure 
         <source>Support Sandboxie</source>
         <translation>支持Sandboxie</translation>
     </message>
+    <message>
+        <source>Retain parent processes</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>WinSvcShutdown</name>
@@ -8997,8 +9037,8 @@ If you save the recovery information using this program, the additional failure 
         <translation>恢复</translation>
     </message>
     <message>
-        <source>Subsequent failures:</source>
-        <translation>随后的失败:</translation>
+        <source>Subsequent faulures:</source>
+        <translation type="vanished">随后的失败:</translation>
     </message>
     <message>
         <source>Restart computer options ...</source>
@@ -9103,6 +9143,10 @@ If you save the recovery information using this program, the additional failure 
     <message>
         <source>Remove</source>
         <translation>移除</translation>
+    </message>
+    <message>
+        <source>Subsequent failures:</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 </TS>

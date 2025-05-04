@@ -4,10 +4,6 @@
 <context>
     <name>CAffinityDialog</name>
     <message>
-        <source>Affinity controls which CPUs tasks are allowed to be executed on.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>CPU %1</source>
         <translation type="unfinished"></translation>
     </message>
@@ -21,6 +17,10 @@
     </message>
     <message>
         <source>CPU Affinity for: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Affinity controls which CPUs tasks are allowed to be executed on.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -1760,11 +1760,11 @@ Modifiers:<byte value="xd"/>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Path/Command Line (with wildcards)|Execution|CPU Priority|CPU Affinity|I/O Priority|Page Priority|</source>
+        <source>Add new entry</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Add new entry</source>
+        <source>Path/Command Line (with wildcards)|Execution|CPU Priority|CPU Affinity|I/O Priority|Page Priority|</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -4876,10 +4876,6 @@ Do you want to continue anyways (Ok), or terminate (Cancel)?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Failed to update DynData, %1, Error: 0x%2 (%3).</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Failed to open archive.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -4969,6 +4965,10 @@ Do you want to continue anyways (Ok), or terminate (Cancel)?</source>
     </message>
     <message>
         <source>All columns</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to update DynData, %1.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -6790,11 +6790,11 @@ Questo chiuderà immediatamente il sistema operativo!</translation>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Unable to unmap the section view at 0x%1</source>
+        <source>Unknown module type!</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Unknown module type!</source>
+        <source>Unable to unmap the section view at 0x%1</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -7516,7 +7516,7 @@ Questo chiuderà immediatamente il sistema operativo!</translation>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Select data type:</source>
+        <source>Sellect data type:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -7623,14 +7623,6 @@ Questo chiuderà immediatamente il sistema operativo!</translation>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Do you want to delete the selected trigger</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Select privilege to add:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Unable to open LSA policy, error: %1</source>
         <translation type="unfinished"></translation>
     </message>
@@ -7639,12 +7631,20 @@ Questo chiuderà immediatamente il sistema operativo!</translation>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Do you want to delete the selected privileg</source>
+        <source>The service has %1 failure actions configured, but this program only supports editing 3.<byte value="xd"/>
+If you save the recovery information using this program, the additional failure actions will be lost.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The service has %1 failure actions configured, but this program only supports editing 3.<byte value="xd"/>
-If you save the recovery information using this program, the additional failure actions will be lost.</source>
+        <source>Do you want to delete the selected trigger</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Select privilege to add:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Do you want to delete the selected privileg</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -7787,10 +7787,6 @@ If you save the recovery information using this program, the additional failure 
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Channel thread initialzed</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>WOW Thread</source>
         <translation type="unfinished"></translation>
     </message>
@@ -7916,6 +7912,10 @@ If you save the recovery information using this program, the additional failure 
     </message>
     <message>
         <source> - %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Channel thread initialized</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -8794,10 +8794,6 @@ If you save the recovery information using this program, the additional failure 
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Retain parent processes</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Undecorate symbols</source>
         <translation type="unfinished"></translation>
     </message>
@@ -8851,6 +8847,10 @@ If you save the recovery information using this program, the additional failure 
     </message>
     <message>
         <source>Support Sandboxie</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Retain parent processes</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -8975,10 +8975,6 @@ If you save the recovery information using this program, the additional failure 
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Subsequent failures:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Restart computer options ...</source>
         <translation type="unfinished"></translation>
     </message>
@@ -9080,6 +9076,10 @@ If you save the recovery information using this program, the additional failure 
     </message>
     <message>
         <source>Remove</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Subsequent failures:</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

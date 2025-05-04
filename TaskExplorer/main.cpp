@@ -222,6 +222,7 @@ int main(int argc, char *argv[])
 			}
 			else {
 				DynDataUpdate = 1;
+				CleanupKSI();
 				DrvStatus = InitKSI(AppDir);
 			}
 			continue;
