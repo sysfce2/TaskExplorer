@@ -270,14 +270,14 @@ PhGetServiceTriggerInfo(
     );
 
 PHLIBAPI
-PPH_STRINGREF
+PCPH_STRINGREF
 NTAPI
 PhGetServiceStateString(
     _In_ ULONG ServiceState
     );
 
 PHLIBAPI
-PPH_STRINGREF
+PCPH_STRINGREF
 NTAPI
 PhGetServiceTypeString(
     _In_ ULONG ServiceType
@@ -291,7 +291,7 @@ PhGetServiceTypeInteger(
     );
 
 PHLIBAPI
-PPH_STRINGREF
+PCPH_STRINGREF
 NTAPI
 PhGetServiceStartTypeString(
     _In_ ULONG ServiceStartType
@@ -305,7 +305,7 @@ PhGetServiceStartTypeInteger(
     );
 
 PHLIBAPI
-PPH_STRINGREF
+PCPH_STRINGREF
 NTAPI
 PhGetServiceErrorControlString(
     _In_ ULONG ServiceErrorControl
@@ -367,11 +367,12 @@ PhGetServiceConfigFileName(
     );
 
 PHLIBAPI
-PPH_STRING
+NTSTATUS
 NTAPI
 PhGetServiceHandleFileName(
     _In_ SC_HANDLE ServiceHandle,
-    _In_ PPH_STRINGREF ServiceName
+    _In_ PPH_STRINGREF ServiceName,
+    _Out_ PPH_STRING* ServiceFileName
     );
 
 PHLIBAPI
@@ -410,6 +411,15 @@ PPH_STRING
 NTAPI
 PhGetServicePackageFullName(
     _In_ PPH_STRINGREF ServiceName
+    );
+
+PHLIBAPI
+NTSTATUS
+NTAPI
+PhWaitForServiceStatus(
+    _In_ SC_HANDLE ServiceHandle,
+    _In_ ULONG WaitForState,
+    _In_ ULONG Timeout
     );
 
 FORCEINLINE

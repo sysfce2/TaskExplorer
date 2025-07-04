@@ -161,7 +161,7 @@ int InitPH(bool bSvc)
 	CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
 
 	//if (!NT_SUCCESS(PhInitializePhLibEx(L"Task Explorer", ULONG_MAX, Instance, 0, 0)))
-	if (!NT_SUCCESS(PhInitializePhLib(L"Task Explorer", Instance)))
+	if (!NT_SUCCESS(PhInitializePhLib(L"Task Explorer")))
 		return 1;
 	//if (!PhInitializeExceptionPolicy())
 	//	return 1;

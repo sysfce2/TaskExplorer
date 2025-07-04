@@ -21,13 +21,13 @@
 DEFINE_GUID(CLSID_WbemLocator, 0x4590f811, 0x1d3a, 0x11d0, 0x89, 0x1f, 0x00, 0xaa, 0x00, 0x4b, 0x2e, 0x24);
 DEFINE_GUID(IID_IWbemLocator, 0xdc12a687, 0x737f, 0x11cf, 0x88, 0x4d, 0x00, 0xaa, 0x00, 0x4b, 0x2e, 0x24);
 
-_PowerGetActiveScheme PowerGetActiveScheme_I = NULL;
-_PowerSetActiveScheme PowerSetActiveScheme_I = NULL;
-_PowerRestoreDefaultPowerSchemes PowerRestoreDefaultPowerSchemes_I = NULL;
+__typeof__(&PowerGetActiveScheme) PowerGetActiveScheme_I = NULL;
+__typeof__(&PowerSetActiveScheme) PowerSetActiveScheme_I = NULL;
+__typeof__(&PowerRestoreDefaultPowerSchemes) PowerRestoreDefaultPowerSchemes_I = NULL;
 _PowerReadSecurityDescriptor PowerReadSecurityDescriptor_I = NULL;
 _PowerWriteSecurityDescriptor PowerWriteSecurityDescriptor_I = NULL;
-_WTSGetListenerSecurity WTSGetListenerSecurity_I = NULL;
-_WTSSetListenerSecurity WTSSetListenerSecurity_I = NULL;
+__typeof__(&WTSGetListenerSecurityW) WTSGetListenerSecurity_I = NULL;
+__typeof__(&WTSSetListenerSecurityW) WTSSetListenerSecurity_I = NULL;
 
 HRESULT PhGetWbemLocatorClass(
     _Out_ struct IWbemLocator** WbemLocatorClass
@@ -45,6 +45,16 @@ HRESULT PhGetWbemLocatorClass(
         {
             imageBaseAddress = PhLoadLibrary(PhGetString(systemFileName));
             PhDereferenceObject(systemFileName);
+        }
+
+        {
+            typedef void (WINAPI* _SetOaNoCache)(void);
+            _SetOaNoCache SetOaNoCache_I;
+
+            if (SetOaNoCache_I = PhGetModuleProcAddress(L"oleaut32.dll", "SetOaNoCache"))
+            {
+                SetOaNoCache_I();
+            }
         }
 
         PhEndInitOnce(&initOnce);
@@ -124,6 +134,48 @@ HRESULT PhCoSetProxyBlanket(
     return status;
 }
 
+HRESULT PhGetWbemClassObjectDependency(
+    _Out_ PVOID* WbemClassObjectDependency,
+    _In_ IWbemClassObject* WbemClassObject,
+    _In_ IWbemServices* WbemServices,
+    _In_ PCWSTR Name
+    )
+{
+    HRESULT status;
+    IWbemClassObject* dependency;
+    VARIANT variant = { 0 };
+
+    status = IWbemClassObject_Get(
+        WbemClassObject,
+        Name,
+        0,
+        &variant,
+        NULL,
+        NULL
+        );
+
+    if (SUCCEEDED(status))
+    {
+        status = IWbemServices_GetObject(
+            WbemServices,
+            V_BSTR(&variant),
+            WBEM_FLAG_RETURN_WBEM_COMPLETE,
+            NULL,
+            &dependency,
+            NULL
+            );
+
+        if (SUCCEEDED(status))
+        {
+            *WbemClassObjectDependency = dependency;
+        }
+
+        SysFreeString(V_BSTR(&variant));
+    }
+
+    return status;
+}
+
 PPH_STRING PhGetWbemClassObjectString(
     _In_ PVOID WbemClassObject,
     _In_ PCWSTR Name
@@ -143,6 +195,40 @@ PPH_STRING PhGetWbemClassObjectString(
     }
 
     return string;
+}
+
+ULONG64 PhGetWbemClassObjectUlong64(
+    _In_ PVOID WbemClassObject,
+    _In_ PCWSTR Name
+    )
+{
+    VARIANT variant;
+
+    RtlZeroMemory(&variant, sizeof(VARIANT));
+
+    if (SUCCEEDED(IWbemClassObject_Get((IWbemClassObject*)WbemClassObject, Name, 0, &variant, NULL, 0)))
+    {
+        return V_UI8(&variant);
+    }
+
+    return ULONG64_MAX;
+}
+
+PVOID PhGetWbemClassObjectUlongPtr(
+    _In_ PVOID WbemClassObject,
+    _In_ PCWSTR Name
+    )
+{
+    VARIANT variant;
+
+    RtlZeroMemory(&variant, sizeof(VARIANT));
+
+    if (SUCCEEDED(IWbemClassObject_Get((IWbemClassObject*)WbemClassObject, Name, 0, &variant, NULL, 0)))
+    {
+        return (PVOID)V_UINT_PTR(&variant);
+    }
+
+    return NULL;
 }
 
 // Power policy security descriptors
@@ -492,7 +578,6 @@ CleanupExit:
         IWbemLocator_Release(wbemLocator);
 
     VariantClear(&variantArrayValue);
-    VariantClear(&variantReturnValue);
     PhClearReference(&querySelectString);
 
     if (wbemMethodString)
@@ -617,7 +702,8 @@ NTSTATUS PhSetWmiNamespaceSecurityDescriptor(
 
         if (ntstatus != STATUS_BUFFER_TOO_SMALL)
         {
-            status = HRESULT_FROM_NT(ntstatus);
+            // Note: HR>WIN32>NT required for correct WMI error messages (dmex)
+            status = HRESULT_FROM_WIN32(PhNtStatusToDosError(ntstatus));
             goto CleanupExit;
         }
 
@@ -631,7 +717,8 @@ NTSTATUS PhSetWmiNamespaceSecurityDescriptor(
         if (!NT_SUCCESS(ntstatus))
         {
             PhFree(relativeSecurityDescriptor);
-            status = HRESULT_FROM_NT(ntstatus);
+            // Note: HR>WIN32>NT required for correct WMI error messages (dmex)
+            status = HRESULT_FROM_WIN32(PhNtStatusToDosError(ntstatus));
             goto CleanupExit;
         }
 
@@ -722,7 +809,6 @@ CleanupExit:
     if (freeSecurityDescriptor && relativeSecurityDescriptor)
         PhFree(relativeSecurityDescriptor);
 
-    VariantClear(&variantReturnValue);
     VariantClear(&variantArrayValue);
     //if (safeArray) SafeArrayDestroy(safeArray);
 
@@ -848,8 +934,6 @@ CleanupExit:
         IWbemClassObject_Release(wbemClassObject);
     if (wbemLocator)
         IWbemLocator_Release(wbemLocator);
-
-    VariantClear(&variantReturnValue);
 
     if (wbemMethodString)
         SysFreeString(wbemMethodString);

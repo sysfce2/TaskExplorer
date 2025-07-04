@@ -27,6 +27,14 @@ NTSTATUS PhCreatePipe(
     return PhCreatePipeEx(PipeReadHandle, PipeWriteHandle, NULL, NULL);
 }
 
+/**
+* Creates an anonymous pipe.
+*
+* \param[out] PipeReadHandle The pipe read handle.
+* \param[out] PipeWriteHandle The pipe write handle.
+* \param[in] PipeReadAttributes Optional pipe read attributes.
+* \param[in] PipeWriteAttributes Optional pipe write attributes.
+*/
 NTSTATUS PhCreatePipeEx(
     _Out_ PHANDLE PipeReadHandle,
     _Out_ PHANDLE PipeWriteHandle,
@@ -98,13 +106,27 @@ NTSTATUS PhCreatePipeEx(
 
     if (!objectAttributes.SecurityDescriptor)
     {
-        if (NT_SUCCESS(PhDefaultNpAcl(&pipeAcl)))
-        {
-            PhCreateSecurityDescriptor(&securityDescriptor, SECURITY_DESCRIPTOR_REVISION);
-            PhSetDaclSecurityDescriptor(&securityDescriptor, TRUE, pipeAcl, FALSE);
+        status = PhDefaultNpAcl(&pipeAcl);
 
-            objectAttributes.SecurityDescriptor = &securityDescriptor;
+        if (NT_SUCCESS(status))
+        {
+            status = PhCreateSecurityDescriptor(&securityDescriptor, SECURITY_DESCRIPTOR_REVISION);
+
+            if (NT_SUCCESS(status))
+            {
+                status = PhSetDaclSecurityDescriptor(&securityDescriptor, TRUE, pipeAcl, FALSE);
+
+                if (NT_SUCCESS(status))
+                {
+                    objectAttributes.SecurityDescriptor = &securityDescriptor;
+                }
+
+                assert(RtlValidSecurityDescriptor(&securityDescriptor));
+            }
         }
+
+        if (!NT_SUCCESS(status))
+            goto CleanupExit;
     }
 
     status = NtCreateNamedPipeFile(
@@ -183,9 +205,10 @@ CleanupExit:
 */
 NTSTATUS PhCreateNamedPipe(
     _Out_ PHANDLE PipeHandle,
-    _In_ PCWSTR PipeName
+    _In_ PCPH_STRINGREF PipeName
     )
 {
+    static CONST PH_STRINGREF deviceName = PH_STRINGREF_INIT(DEVICE_NAMED_PIPE);
     NTSTATUS status;
     PACL pipeAcl = NULL;
     HANDLE pipeHandle;
@@ -203,8 +226,13 @@ NTSTATUS PhCreateNamedPipe(
         FALSE
     };
 
-    pipeName = PhConcatStrings2(DEVICE_NAMED_PIPE, PipeName);
-    PhStringRefToUnicodeString(&pipeName->sr, &pipeNameUs);
+    pipeName = PhConcatStringRef2(&deviceName, PipeName);
+
+    if (!PhStringRefToUnicodeString(&pipeName->sr, &pipeNameUs))
+    {
+        PhDereferenceObject(pipeName);
+        return STATUS_NAME_TOO_LONG;
+    }
 
     InitializeObjectAttributes(
         &objectAttributes,
@@ -256,9 +284,10 @@ NTSTATUS PhCreateNamedPipe(
 
 NTSTATUS PhConnectPipe(
     _Out_ PHANDLE PipeHandle,
-    _In_ PCWSTR PipeName
+    _In_ PCPH_STRINGREF PipeName
     )
 {
+    static CONST PH_STRINGREF deviceName = PH_STRINGREF_INIT(DEVICE_NAMED_PIPE);
     NTSTATUS status;
     HANDLE pipeHandle;
     PPH_STRING pipeName;
@@ -273,8 +302,13 @@ NTSTATUS PhConnectPipe(
         FALSE
     };
 
-    pipeName = PhConcatStrings2(DEVICE_NAMED_PIPE, PipeName);
-    PhStringRefToUnicodeString(&pipeName->sr, &pipeNameUs);
+    pipeName = PhConcatStringRef2(&deviceName, PipeName);
+
+    if (!PhStringRefToUnicodeString(&pipeName->sr, &pipeNameUs))
+    {
+        PhDereferenceObject(pipeName);
+        return STATUS_NAME_TOO_LONG;
+    }
 
     InitializeObjectAttributes(
         &objectAttributes,
@@ -438,7 +472,7 @@ NTSTATUS PhPeekNamedPipe(
 }
 
 NTSTATUS PhCallNamedPipe(
-    _In_ PWSTR PipeName,
+    _In_ PCWSTR PipeName,
     _In_reads_bytes_(InputBufferLength) PVOID InputBuffer,
     _In_ ULONG InputBufferLength,
     _Out_writes_bytes_(OutputBufferLength) PVOID OutputBuffer,
@@ -448,13 +482,13 @@ NTSTATUS PhCallNamedPipe(
     NTSTATUS status;
     HANDLE pipeHandle = NULL;
 
-    status = PhConnectPipe(&pipeHandle, PipeName);
+    status = PhConnectPipeZ(&pipeHandle, PipeName);
 
     if (!NT_SUCCESS(status))
     {
         PhWaitForNamedPipe(PipeName, 1000);
 
-        status = PhConnectPipe(&pipeHandle, PipeName);
+        status = PhConnectPipeZ(&pipeHandle, PipeName);
     }
 
     if (NT_SUCCESS(status))
@@ -846,12 +880,12 @@ NTSTATUS PhGetNamedPipeServerSessionId(
 }
 
 NTSTATUS PhEnumDirectoryNamedPipe(
-    _In_opt_ PUNICODE_STRING SearchPattern,
+    _In_opt_ PCPH_STRINGREF SearchPattern,
     _In_ PPH_ENUM_DIRECTORY_FILE Callback,
     _In_opt_ PVOID Context
     )
 {
-    static PH_STRINGREF objectName = PH_STRINGREF_INIT(DEVICE_NAMED_PIPE);
+    static CONST PH_STRINGREF objectName = PH_STRINGREF_INIT(DEVICE_NAMED_PIPE);
     HANDLE objectHandle;
     NTSTATUS status;
 
@@ -932,23 +966,23 @@ NTSTATUS PhDefaultNpAcl(
 
         pipeAcl = PhAllocateZero(defaultAclSize);
         PhCreateAcl(pipeAcl, defaultAclSize, ACL_REVISION);
-        RtlAddAccessAllowedAce(pipeAcl, ACL_REVISION, GENERIC_ALL, (PSID)&PhSeLocalSystemSid);
-        RtlAddAccessAllowedAce(pipeAcl, ACL_REVISION, GENERIC_ALL, (PSID)PhSeAdministratorsSid());
+        PhAddAccessAllowedAce(pipeAcl, ACL_REVISION, GENERIC_ALL, (PSID)&PhSeLocalSystemSid);
+        PhAddAccessAllowedAce(pipeAcl, ACL_REVISION, GENERIC_ALL, (PSID)PhSeAdministratorsSid());
 
         if (tokenAppContainer.AppContainer.Sid)
-            RtlAddAccessAllowedAce(pipeAcl, ACL_REVISION, GENERIC_ALL, tokenAppContainer.AppContainer.Sid);
+            PhAddAccessAllowedAce(pipeAcl, ACL_REVISION, GENERIC_ALL, tokenAppContainer.AppContainer.Sid);
         if (appContainerSidParent)
-            RtlAddAccessAllowedAce(pipeAcl, ACL_REVISION, GENERIC_ALL, appContainerSidParent);
+            PhAddAccessAllowedAce(pipeAcl, ACL_REVISION, GENERIC_ALL, appContainerSidParent);
 
-        RtlAddAccessAllowedAce(pipeAcl, ACL_REVISION, GENERIC_ALL, tokenQuery.TokenOwner.Owner);
-        RtlAddAccessAllowedAce(pipeAcl, ACL_REVISION, GENERIC_READ, (PSID)&PhSeEveryoneSid);
-        RtlAddAccessAllowedAce(pipeAcl, ACL_REVISION, GENERIC_READ, (PSID)&PhSeAnonymousLogonSid);
+        PhAddAccessAllowedAce(pipeAcl, ACL_REVISION, GENERIC_ALL, tokenQuery.TokenOwner.Owner);
+        PhAddAccessAllowedAce(pipeAcl, ACL_REVISION, GENERIC_READ, (PSID)&PhSeEveryoneSid);
+        PhAddAccessAllowedAce(pipeAcl, ACL_REVISION, GENERIC_READ, (PSID)&PhSeAnonymousLogonSid);
 
         *DefaultNpAc = pipeAcl;
 
         if (appContainerSidParent)
         {
-            PhFreeSid(appContainerSidParent);
+            RtlFreeSid(appContainerSidParent);
         }
     }
 

@@ -32,7 +32,9 @@
 #define PH_THREAD_STACK_NATIVE_MACHINE IMAGE_FILE_MACHINE_I386
 #endif
 
-#define PAC_DECODE_ADDRESS(address) (address & ~(USER_SHARED_DATA->UserPointerAuthMask))
+#if defined(_ARM64_)
+#define PAC_DECODE_ADDRESS(Address) ((Address) & ~(USER_SHARED_DATA->UserPointerAuthMask))
+#endif
 
 typedef struct _PH_SYMBOL_MODULE
 {
@@ -153,6 +155,7 @@ PPH_SYMBOL_PROVIDER PhCreateSymbolProvider(
     return symbolProvider;
 }
 
+_Function_class_(PH_TYPE_DELETE_PROCEDURE)
 VOID NTAPI PhpSymbolProviderDeleteProcedure(
     _In_ PVOID Object,
     _In_ ULONG Flags
@@ -279,7 +282,7 @@ static VOID PhpSymbolProviderEventCallback(
                         progressValueLength - (RTL_NUMBER_OF(L"percent=\"") - 1)
                         );
 
-                    if (PhStringToInteger64(&valueString->sr, 10, &integer))
+                    if (PhStringToUInt64(&valueString->sr, 10, &integer))
                     {
                         PPH_STRING status;
                         PH_FORMAT format[4];
@@ -361,27 +364,27 @@ BOOL CALLBACK PhpSymbolCallbackFunction(
             }
         }
         return TRUE;
-    case CBA_READ_MEMORY:
-#ifndef _ARM64_
-        {
-            PIMAGEHLP_CBA_READ_MEMORY callbackData = (PIMAGEHLP_CBA_READ_MEMORY)CallbackData;
-
-            if (symbolProvider->IsRealHandle)
-            {
-                if (NT_SUCCESS(NtReadVirtualMemory(
-                    ProcessHandle,
-                    (PVOID)callbackData->addr,
-                    callbackData->buf,
-                    (SIZE_T)callbackData->bytes,
-                    (PSIZE_T)callbackData->bytesread
-                    )))
-                {
-                    return TRUE;
-                }
-            }
-        }
-#endif
-        return FALSE;
+//    case CBA_READ_MEMORY:
+//#ifndef _ARM64_
+//        {
+//            PIMAGEHLP_CBA_READ_MEMORY callbackData = (PIMAGEHLP_CBA_READ_MEMORY)CallbackData;
+//
+//            if (symbolProvider->IsRealHandle)
+//            {
+//                if (NT_SUCCESS(NtReadVirtualMemory(
+//                    ProcessHandle,
+//                    (PVOID)callbackData->addr,
+//                    callbackData->buf,
+//                    (SIZE_T)callbackData->bytes,
+//                    (PSIZE_T)callbackData->bytesread
+//                    )))
+//                {
+//                    return TRUE;
+//                }
+//            }
+//        }
+//#endif
+//        return FALSE;
     case CBA_DEFERRED_SYMBOL_LOAD_CANCEL:
         {
             if (symbolProvider->Terminating)
@@ -397,10 +400,10 @@ VOID PhpSymbolProviderCompleteInitialization(
     VOID
     )
 {
-    static PH_STRINGREF windowsKitsRootKeyName = PH_STRINGREF_INIT(L"Software\\Microsoft\\Windows Kits\\Installed Roots");
-    static PH_STRINGREF dbgcoreFileName = PH_STRINGREF_INIT(L"dbgcore.dll"); // dbghelp.dll dependency required for MiniDumpWriteDump (dmex)
-    static PH_STRINGREF dbghelpFileName = PH_STRINGREF_INIT(L"dbghelp.dll");
-    static PH_STRINGREF symsrvFileName = PH_STRINGREF_INIT(L"symsrv.dll");
+    static CONST PH_STRINGREF windowsKitsRootKeyName = PH_STRINGREF_INIT(L"Software\\Microsoft\\Windows Kits\\Installed Roots");
+    static CONST PH_STRINGREF dbgcoreFileName = PH_STRINGREF_INIT(L"dbgcore.dll"); // dbghelp.dll dependency required for MiniDumpWriteDump (dmex)
+    static CONST PH_STRINGREF dbghelpFileName = PH_STRINGREF_INIT(L"dbghelp.dll");
+    static CONST PH_STRINGREF symsrvFileName = PH_STRINGREF_INIT(L"symsrv.dll");
     PPH_STRING winsdkPath;
     PVOID dbgcoreHandle;
     PVOID dbghelpHandle;
@@ -453,26 +456,26 @@ VOID PhpSymbolProviderCompleteInitialization(
 #endif
         if (dbgcoreName = PhConcatStringRef3(&PhWin32ExtendedPathPrefix, &winsdkPath->sr, &dbgcoreFileName))
         {
-            dbgcoreHandle = PhLoadLibrary(dbgcoreName->Buffer);
+            dbgcoreHandle = PhLoadLibrary(PhGetString(dbgcoreName));
             PhDereferenceObject(dbgcoreName);
         }
 
-        if (dbgcoreHandle && (dbghelpName = PhConcatStringRef3(&PhWin32ExtendedPathPrefix, &winsdkPath->sr, &dbghelpFileName)))
+        if (dbghelpName = PhConcatStringRef3(&PhWin32ExtendedPathPrefix, &winsdkPath->sr, &dbghelpFileName))
         {
-            dbghelpHandle = PhLoadLibrary(dbghelpName->Buffer);
+            dbghelpHandle = PhLoadLibrary(PhGetString(dbghelpName));
             PhDereferenceObject(dbghelpName);
         }
 
-        if (dbghelpHandle && (symsrvName = PhConcatStringRef3(&PhWin32ExtendedPathPrefix, &winsdkPath->sr, &symsrvFileName)))
+        if (symsrvName = PhConcatStringRef3(&PhWin32ExtendedPathPrefix, &winsdkPath->sr, &symsrvFileName))
         {
-            symsrvHandle = PhLoadLibrary(symsrvName->Buffer);
+            symsrvHandle = PhLoadLibrary(PhGetString(symsrvName));
             PhDereferenceObject(symsrvName);
         }
 
         PhDereferenceObject(winsdkPath);
     }
 
-    if (!dbgcoreHandle)
+    if (!dbghelpHandle)
     {
         PPH_STRING applicationDirectory;
         PPH_STRING dbgcoreName;
@@ -487,13 +490,13 @@ VOID PhpSymbolProviderCompleteInitialization(
                 PhDereferenceObject(dbgcoreName);
             }
 
-            if (dbgcoreHandle && (dbghelpName = PhConcatStringRef3(&PhWin32ExtendedPathPrefix, &applicationDirectory->sr, &dbghelpFileName)))
+            if (dbghelpName = PhConcatStringRef3(&PhWin32ExtendedPathPrefix, &applicationDirectory->sr, &dbghelpFileName))
             {
                 dbghelpHandle = PhLoadLibrary(dbghelpName->Buffer);
                 PhDereferenceObject(dbghelpName);
             }
 
-            if (dbghelpHandle && (symsrvName = PhConcatStringRef3(&PhWin32ExtendedPathPrefix, &applicationDirectory->sr, &symsrvFileName)))
+            if (symsrvName = PhConcatStringRef3(&PhWin32ExtendedPathPrefix, &applicationDirectory->sr, &symsrvFileName))
             {
                 symsrvHandle = PhLoadLibrary(symsrvName->Buffer);
                 PhDereferenceObject(symsrvName);
@@ -509,6 +512,11 @@ VOID PhpSymbolProviderCompleteInitialization(
         dbghelpHandle = PhLoadLibrary(L"dbghelp.dll");
     if (!symsrvHandle)
         symsrvHandle = PhLoadLibrary(L"symsrv.dll");
+
+    if (dbgcoreHandle)
+    {
+        MiniDumpWriteDump_I = PhGetDllBaseProcedureAddress(dbgcoreHandle, "MiniDumpWriteDump", 0);
+    }
 
     if (dbghelpHandle)
     {
@@ -528,8 +536,12 @@ VOID PhpSymbolProviderCompleteInitialization(
         StackWalkEx_I = PhGetDllBaseProcedureAddress(dbghelpHandle, "StackWalkEx", 0);
         SymFromInlineContextW_I = PhGetDllBaseProcedureAddress(dbghelpHandle, "SymFromInlineContextW", 0);
         SymGetLineFromInlineContextW_I = PhGetDllBaseProcedureAddress(dbghelpHandle, "SymGetLineFromInlineContextW", 0);
-        MiniDumpWriteDump_I = PhGetDllBaseProcedureAddress(dbghelpHandle, "MiniDumpWriteDump", 0);
         UnDecorateSymbolNameW_I = PhGetDllBaseProcedureAddress(dbghelpHandle, "UnDecorateSymbolNameW", 0);
+
+        if (!MiniDumpWriteDump_I)
+        {
+            MiniDumpWriteDump_I = PhGetDllBaseProcedureAddress(dbghelpHandle, "MiniDumpWriteDump", 0);
+        }
     }
 }
 
@@ -1301,7 +1313,7 @@ VOID PhLoadSymbolProviderModules(
 
     // Load symbols for ntdll.dll and kernel32.dll.
     {
-        static PH_STRINGREF fileNames[] =
+        static CONST PH_STRINGREF fileNames[] =
         {
             PH_STRINGREF_INIT(L"ntdll.dll"),
             PH_STRINGREF_INIT(L"kernel32.dll"),
@@ -1376,7 +1388,7 @@ VOID PhLoadModulesForVirtualSymbolProvider(
 
     // Load symbols for ntdll.dll and kernel32.dll (dmex)
     {
-        static PH_STRINGREF fileNames[] =
+        static CONST PH_STRINGREF fileNames[] =
         {
             PH_STRINGREF_INIT(L"ntdll.dll"),
             PH_STRINGREF_INIT(L"kernel32.dll"),
@@ -1655,7 +1667,7 @@ NTSTATUS PhpAccessCallbackFunctionTable(
     _Out_ PULONG NumberOfFunctions
     )
 {
-    static PH_STRINGREF knownFunctionTableDllsKeyName = PH_STRINGREF_INIT(L"Software\\Microsoft\\Windows NT\\CurrentVersion\\KnownFunctionTableDlls");
+    static CONST PH_STRINGREF knownFunctionTableDllsKeyName = PH_STRINGREF_INIT(L"Software\\Microsoft\\Windows NT\\CurrentVersion\\KnownFunctionTableDlls");
     NTSTATUS status;
     HANDLE keyHandle;
     ULONG returnLength;
@@ -2026,22 +2038,21 @@ HRESULT PhWriteMiniDumpProcess(
  * \param Flags Flags to set in the resulting structure.
  * \param ThreadStackFrame A pointer to the resulting PH_THREAD_STACK_FRAME structure.
  */
-VOID PhpConvertStackFrame(
-    _In_ STACKFRAME_EX *StackFrame,
+VOID PhConvertStackFrame(
+    _In_ CONST STACKFRAME_EX *StackFrame,
     _In_ USHORT Machine,
     _In_ USHORT Flags,
     _Out_ PPH_THREAD_STACK_FRAME ThreadStackFrame
     )
 {
-    ULONG i;
-
+    memset(ThreadStackFrame, 0, sizeof(ThreadStackFrame->Params));
     ThreadStackFrame->PcAddress = (PVOID)StackFrame->AddrPC.Offset;
     ThreadStackFrame->ReturnAddress = (PVOID)StackFrame->AddrReturn.Offset;
     ThreadStackFrame->FrameAddress = (PVOID)StackFrame->AddrFrame.Offset;
     ThreadStackFrame->StackAddress = (PVOID)StackFrame->AddrStack.Offset;
     ThreadStackFrame->BStoreAddress = (PVOID)StackFrame->AddrBStore.Offset;
 
-    for (i = 0; i < 4; i++)
+    for (ULONG i = 0; i < 4; i++)
         ThreadStackFrame->Params[i] = (PVOID)StackFrame->Params[i];
 
     ThreadStackFrame->Machine = Machine;
@@ -2089,6 +2100,7 @@ NTSTATUS PhWalkThreadStack(
     BOOLEAN isCurrentThread = FALSE;
     BOOLEAN isSystemThread = FALSE;
     THREAD_BASIC_INFORMATION basicInfo;
+    HANDLE stateChangeHandle = NULL;
 
     // Open a handle to the process if we weren't given one.
     if (!ProcessHandle)
@@ -2118,7 +2130,7 @@ NTSTATUS PhWalkThreadStack(
     // Determine if the caller specified the current thread.
     if (ClientId)
     {
-        if (ClientId->UniqueThread == NtCurrentTeb()->ClientId.UniqueThread)
+        if (ClientId->UniqueThread == NtCurrentThreadId())
             isCurrentThread = TRUE;
         if (ClientId->UniqueProcess == SYSTEM_IDLE_PROCESS_ID || ClientId->UniqueProcess == SYSTEM_PROCESS_ID)
             isSystemThread = TRUE;
@@ -2131,7 +2143,7 @@ NTSTATUS PhWalkThreadStack(
         }
         else if (NT_SUCCESS(PhGetThreadBasicInformation(ThreadHandle, &basicInfo)))
         {
-            if (basicInfo.ClientId.UniqueThread == NtCurrentTeb()->ClientId.UniqueThread)
+            if (basicInfo.ClientId.UniqueThread == NtCurrentThreadId())
                 isCurrentThread = TRUE;
             if (basicInfo.ClientId.UniqueProcess == SYSTEM_IDLE_PROCESS_ID || basicInfo.ClientId.UniqueProcess == SYSTEM_PROCESS_ID)
                 isSystemThread = TRUE;
@@ -2146,7 +2158,9 @@ NTSTATUS PhWalkThreadStack(
         if (NT_SUCCESS(PhGetThreadStartAddress(ThreadHandle, &startAddress)))
         {
             if (startAddress > PhSystemBasicInformation.MaximumUserModeAddress)
+            {
                 isSystemThread = TRUE;
+            }
         }
     }
 
@@ -2155,7 +2169,17 @@ NTSTATUS PhWalkThreadStack(
     if (!isCurrentThread && !isSystemThread)
     {
         if (NT_SUCCESS(NtSuspendThread(ThreadHandle, NULL)))
+        {
             suspended = TRUE;
+        }
+
+        if (WindowsVersion >= WINDOWS_11)
+        {
+            // Note: NtSuspendThread does not always suspend the thread due to race condition issues in the kernel and third party processes.
+            // Windows 11 added state change support and fixed these and other bugs. We need to freeze the thread for an accurate result. (dmex)
+            // https://learn.microsoft.com/en-us/windows-hardware/drivers/debugger/controlling-processes-and-threads#freezing-and-suspending-threads
+            PhFreezeThread(&stateChangeHandle, ThreadHandle);
+        }
     }
 
     // Kernel stack walk.
@@ -2289,7 +2313,7 @@ NTSTATUS PhWalkThreadStack(
 #endif
 
             // If we have an invalid instruction pointer, break.
-            if (!stackFrame.AddrPC.Offset || stackFrame.AddrPC.Offset == -1)
+            if (!stackFrame.AddrPC.Offset || stackFrame.AddrPC.Offset == ULONG64_MAX)
             {
 #if defined(_ARM64_)
 CheckFinalARM64VirtualFrame:
@@ -2300,7 +2324,7 @@ CheckFinalARM64VirtualFrame:
                 {
                     // Convert the stack frame and execute the callback.
 
-                    PhpConvertStackFrame(&virtualFrame, (USHORT)virtualMachine, 0, &threadStackFrame);
+                    PhConvertStackFrame(&virtualFrame, (USHORT)virtualMachine, 0, &threadStackFrame);
 
                     if (!Callback(&threadStackFrame, Context))
                         goto ResumeExit;
@@ -2319,7 +2343,7 @@ CheckFinalARM64VirtualFrame:
             // issues with possible solutions. These need more time to investigate:
             //
             // - ARM64EC (Inline frame) seem to be missing. Probably needs special handling or the
-            //   "virtural frames" are messing up the existing inline frame resolution. For context
+            //   "virtual frames" are messing up the existing inline frame resolution. For context
             //   dbgeng.dll appears to have "virtual frames" as we do here, but we likely need some
             //   additional handling for inline frames.
             // - .NET under ARM64 emulation seems to eventually walk into strange frames, x64 is
@@ -2352,7 +2376,7 @@ CheckFinalARM64VirtualFrame:
 
                 // Convert the stack frame and execute the callback.
 
-                PhpConvertStackFrame(&virtualFrame, (USHORT)virtualMachine, 0, &threadStackFrame);
+                PhConvertStackFrame(&virtualFrame, (USHORT)virtualMachine, 0, &threadStackFrame);
 
                 if (!Callback(&threadStackFrame, Context))
                     goto ResumeExit;
@@ -2373,7 +2397,7 @@ CheckFinalARM64VirtualFrame:
 
             // Convert the stack frame and execute the callback.
 
-            PhpConvertStackFrame(&stackFrame, (USHORT)machine, 0, &threadStackFrame);
+            PhConvertStackFrame(&stackFrame, (USHORT)machine, 0, &threadStackFrame);
 
             if (!Callback(&threadStackFrame, Context))
                 goto ResumeExit;
@@ -2429,8 +2453,9 @@ SkipUserStack:
                 NULL,
                 NULL
                 ))
+            {
                 break;
-
+            }
 
             // TODO(jxy-s)
             //
@@ -2439,18 +2464,22 @@ SkipUserStack:
             // for this I removed it in the last chunk of ARM64 fixes since I wasn't happy with it.
 
             // If we have an invalid instruction pointer, break.
-            if (!stackFrame.AddrPC.Offset || stackFrame.AddrPC.Offset == -1)
+            if (!stackFrame.AddrPC.Offset || stackFrame.AddrPC.Offset == ULONG64_MAX)
                 break;
 
             // Convert the stack frame and execute the callback.
 
-            PhpConvertStackFrame(&stackFrame, IMAGE_FILE_MACHINE_I386, 0, &threadStackFrame);
+            PhConvertStackFrame(&stackFrame, IMAGE_FILE_MACHINE_I386, 0, &threadStackFrame);
 
             if (!Callback(&threadStackFrame, Context))
                 goto ResumeExit;
 
 #if !defined(_ARM64_)
-            // (x86 only) Allow the user to change Eip, Esp and Ebp.
+            // (x86 only) Allow extensions to fixup the Eip, Esp and Ebp addresses.
+            // Note: Managed environments like .NET manage their own stack frames,
+            // and don't align with native expectations. Extensions like DotNetTools
+            // query the CLR runtime debug interface and provide the correct addresses
+            // as required to show correct thread call stacks and execution context. (dnex)
             context.Eip = PtrToUlong(threadStackFrame.PcAddress);
             stackFrame.AddrPC.Offset = PtrToUlong(threadStackFrame.PcAddress);
             context.Ebp = PtrToUlong(threadStackFrame.FrameAddress);
@@ -2503,15 +2532,17 @@ SkipI386Stack:
                 NULL,
                 NULL
                 ))
+            {
                 break;
+            }
 
             // If we have an invalid instruction pointer, break.
-            if (!stackFrame.AddrPC.Offset || stackFrame.AddrPC.Offset == -1)
+            if (!stackFrame.AddrPC.Offset || stackFrame.AddrPC.Offset == ULONG64_MAX)
                 break;
 
             // Convert the stack frame and execute the callback.
 
-            PhpConvertStackFrame(&stackFrame, IMAGE_FILE_MACHINE_ARMNT, 0, &threadStackFrame);
+            PhConvertStackFrame(&stackFrame, IMAGE_FILE_MACHINE_ARMNT, 0, &threadStackFrame);
 
             if (!Callback(&threadStackFrame, Context))
                 goto ResumeExit;
@@ -2525,6 +2556,9 @@ SkipARMStack:
 ResumeExit:
     if (suspended)
         NtResumeThread(ThreadHandle, NULL);
+
+    if (stateChangeHandle)
+        NtClose(stateChangeHandle);
 
     if (processOpened)
         NtClose(ProcessHandle);

@@ -868,7 +868,7 @@ PPH_LIST DnProcessAppDomainListDeserialize(
     PVOID jsonArray;
     ULONG arrayLength;
 
-    if (!(jsonArray = PhCreateJsonParserEx(String, FALSE)))
+    if (!NT_SUCCESS(PhCreateJsonParserEx(String, &jsonArray, FALSE)))
         return NULL;
     if (PhGetJsonObjectType(jsonArray) != PH_JSON_OBJECT_TYPE_ARRAY)
         goto CleanupExit;
@@ -1024,12 +1024,12 @@ VOID DnGetProcessDotNetRuntimes(
     {
         PDN_PROCESS_CLR_RUNTIME_ENTRY entry = context.RuntimeList->Items[i];
 
-        dprintf(
+        /*dprintf(
             "Runtime version: %S @ 0x%I64x [%S]\n",
             entry->RuntimeVersion->Buffer,
             entry->DllBase,
             entry->FileName->Buffer
-            );
+            );*/
 
         PhClearReference(&entry->FileName);
         PhClearReference(&entry->RuntimeVersion);

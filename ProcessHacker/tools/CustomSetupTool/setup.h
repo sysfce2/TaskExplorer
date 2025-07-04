@@ -45,10 +45,6 @@
 #define SETUP_SHOWUPDATEFINAL (WM_APP + 9)
 #define SETUP_SHOWUPDATEERROR (WM_APP + 10)
 
-#define TaskDialogNavigatePage(WindowHandle, Config) \
-    assert(HandleToUlong(NtCurrentThreadId()) == GetWindowThreadProcessId((WindowHandle), NULL)); \
-    SendMessage((WindowHandle), TDM_NAVIGATE_PAGE, 0, (LPARAM)(Config));
-
 #ifdef DEBUG
 //#define FORCE_TEST_UPDATE_LOCAL_INSTALL 1
 #endif
@@ -77,7 +73,10 @@ typedef struct _PH_SETUP_CONTEXT
             ULONG SetupRemoveAppData: 1;
             ULONG SetupIsLegacyUpdate : 1;
             ULONG Silent : 1;
-            ULONG Spare : 29;
+            ULONG NoStart : 1;
+            ULONG Hide : 1;
+            ULONG NeedsReboot : 1;
+            ULONG Spare : 26;
         };
     };
 
@@ -85,34 +84,12 @@ typedef struct _PH_SETUP_CONTEXT
     PPH_STRING SetupInstallPath;
     PPH_STRING SetupServiceName;
 
-    PVOID ZipDownloadBuffer;
-    ULONG ZipDownloadBufferLength;
-
-    ULONG ErrorCode;
-
-    PPH_STRING RelDate;
-    PPH_STRING RelVersion;
-
-    PPH_STRING BinFileDownloadUrl;
-    ULONGLONG BinFileLength;
-    PPH_STRING BinFileHash;
-    PPH_STRING BinFileSignature;
-    PPH_STRING SetupFileDownloadUrl;
-    ULONGLONG SetupFileLength;
-    PPH_STRING SetupFileHash;
-    PPH_STRING SetupFileSignature;
-
-    //PPH_STRING WebSetupFileDownloadUrl;
-    //PPH_STRING WebSetupFileVersion;
-    //PPH_STRING WebSetupFileLength;
-    //PPH_STRING WebSetupFileHash;
-    //PPH_STRING WebSetupFileSignature;
+    NTSTATUS LastStatus;
 
     ULONG CurrentMajorVersion;
     ULONG CurrentMinorVersion;
     ULONG CurrentRevisionVersion;
 
-    BOOLEAN NeedsReboot;
     HANDLE SubProcessHandle;
 } PH_SETUP_CONTEXT, *PPH_SETUP_CONTEXT;
 
@@ -176,6 +153,10 @@ VOID ShowUpdateErrorPageDialog(
     _In_ PPH_SETUP_CONTEXT Context
     );
 
+LONG SetupShowMessagePromptForLegacyVersion(
+    VOID
+    );
+
 // util.c
 
 PPH_STRING SetupFindInstallDirectory(
@@ -186,7 +167,7 @@ VOID SetupDeleteAppdataDirectory(
     _In_ PPH_SETUP_CONTEXT Context
     );
 
-BOOLEAN SetupUninstallDriver(
+NTSTATUS SetupUninstallDriver(
     _In_ PPH_SETUP_CONTEXT Context
     );
 
@@ -212,7 +193,7 @@ VOID SetupDeleteShortcuts(
     _In_ PPH_SETUP_CONTEXT Context
     );
 
-BOOLEAN SetupCreateUninstallFile(
+NTSTATUS SetupCreateUninstallFile(
     _In_ PPH_SETUP_CONTEXT Context
     );
 VOID SetupDeleteUninstallFile(
@@ -224,6 +205,9 @@ NTSTATUS SetupExecuteApplication(
     );
 
 VOID SetupUpgradeSettingsFile(
+    VOID
+    );
+NTSTATUS SetupConvertSettingsFile(
     VOID
     );
 
@@ -239,10 +223,10 @@ typedef struct _SETUP_REMOVE_FILE
 } SETUP_REMOVE_FILE, *PSETUP_REMOVE_FILE;
 
 VOID SetupCreateLink(
-    _In_ PWSTR LinkFilePath,
-    _In_ PWSTR FilePath,
-    _In_ PWSTR FileParentDir,
-    _In_ PWSTR AppId
+    _In_ PCWSTR LinkFilePath,
+    _In_ PCWSTR FilePath,
+    _In_ PCWSTR FileParentDir,
+    _In_ PCWSTR AppId
     );
 
 BOOLEAN CheckApplicationInstalled(
@@ -257,7 +241,11 @@ PPH_STRING GetApplicationInstallPath(
     VOID
     );
 
-BOOLEAN SetupShutdownApplication(
+BOOLEAN SetupLegacySetupInstalled(
+    VOID
+    );
+
+NTSTATUS SetupShutdownApplication(
     _In_ PPH_SETUP_CONTEXT Context
     );
 
@@ -268,17 +256,16 @@ NTSTATUS QueryProcessesUsingVolumeOrFile(
 
 PPH_STRING SetupCreateFullPath(
     _In_ PPH_STRING Path,
-    _In_ PWSTR FileName
+    _In_ PCWSTR FileName
     );
 
-BOOLEAN SetupOverwriteFile(
+NTSTATUS SetupOverwriteFile(
     _In_ PPH_STRING FileName,
     _In_ PVOID Buffer,
     _In_ ULONG BufferLength
     );
 
-_Success_(return)
-BOOLEAN SetupHashFile(
+NTSTATUS SetupHashFile(
     _In_ PPH_STRING FileName,
     _Out_writes_all_(256 / 8) PBYTE Buffer
     );
@@ -305,25 +292,25 @@ BOOLEAN UpdateDownloadUpdateData(
 
 // extract.c
 
-BOOLEAN SetupExtractBuild(
+NTSTATUS CALLBACK SetupExtractBuild(
     _In_ PPH_SETUP_CONTEXT Context
     );
 
 // install.c
 
-NTSTATUS SetupProgressThread(
+NTSTATUS CALLBACK SetupProgressThread(
     _In_ PPH_SETUP_CONTEXT Context
     );
 
 // update.c
 
-NTSTATUS SetupUpdateBuild(
+NTSTATUS CALLBACK SetupUpdateBuild(
     _In_ PPH_SETUP_CONTEXT Context
     );
 
 // uninstall.c
 
-NTSTATUS SetupUninstallBuild(
+NTSTATUS CALLBACK SetupUninstallBuild(
     _In_ PPH_SETUP_CONTEXT Context
     );
 

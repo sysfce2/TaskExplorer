@@ -375,10 +375,11 @@ bool CWinThread::UpdateDynamicData(struct _SYSTEM_THREAD_INFORMATION* thread, qu
 
 	m->LastStatusQueryStatus = PhGetThreadLastStatusValue(m->ThreadHandle, m->ProcessHandle, &m->LastStatusValue);
 
-	OLETLSFLAGS apartmentState = (OLETLSFLAGS)0;
-	if (NT_SUCCESS(PhGetThreadApartmentState(m->ThreadHandle, m->ProcessHandle, &apartmentState)))
+	ULONG ApartmentFlags = 0;
+	ULONG ComInits = 0;
+	if (NT_SUCCESS(PhGetThreadApartmentFlags(m->ThreadHandle, m->ProcessHandle, &ApartmentFlags, &ComInits)))
 	{
-		m_ApartmentState = apartmentState;
+		m_ApartmentState = ApartmentFlags;
 	}
 
 	ULONG_PTR stackUsage = 0;

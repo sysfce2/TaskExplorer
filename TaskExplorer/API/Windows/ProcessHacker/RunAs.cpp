@@ -227,8 +227,8 @@ NTSTATUS PhInvokeRunAsService(
         flags,
         NULL,
         NULL,
-        NULL
-        );
+        NULL,
+        NULL);
 
     if (domainName) PhDereferenceObject(domainName);
     if (userName) PhDereferenceObject(userName);

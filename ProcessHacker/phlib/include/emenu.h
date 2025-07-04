@@ -35,14 +35,18 @@ EXTERN_C_START
 
 typedef struct _PH_EMENU_ITEM *PPH_EMENU_ITEM;
 
-typedef VOID (NTAPI *PPH_EMENU_ITEM_DELETE_FUNCTION)(
+typedef _Function_class_(PH_EMENU_ITEM_DELETE_FUNCTION)
+VOID NTAPI PH_EMENU_ITEM_DELETE_FUNCTION(
     _In_ PPH_EMENU_ITEM Item
     );
+typedef PH_EMENU_ITEM_DELETE_FUNCTION* PPH_EMENU_ITEM_DELETE_FUNCTION;
 
-typedef VOID (NTAPI *PPH_EMENU_ITEM_DELAY_FUNCTION)(
+typedef _Function_class_(PH_EMENU_ITEM_DELAY_FUNCTION)
+VOID NTAPI PH_EMENU_ITEM_DELAY_FUNCTION(
     _In_ HMENU Menu,
     _In_ PPH_EMENU_ITEM Item
     );
+typedef PH_EMENU_ITEM_DELAY_FUNCTION* PPH_EMENU_ITEM_DELAY_FUNCTION;
 
 typedef struct _PH_EMENU_ITEM
 {
@@ -64,7 +68,9 @@ typedef struct _PH_EMENU_ITEM
 typedef struct _PH_EMENU_ITEM PH_EMENU, *PPH_EMENU;
 
 PHLIBAPI
-PPH_EMENU_ITEM PhCreateEMenuItem(
+PPH_EMENU_ITEM
+NTAPI
+PhCreateEMenuItem(
     _In_ ULONG Flags,
     _In_ ULONG Id,
     _In_opt_ PCWSTR Text,
@@ -117,20 +123,26 @@ PhFindEMenuItemEx(
     );
 
 PHLIBAPI
-ULONG PhIndexOfEMenuItem(
+ULONG
+NTAPI
+PhIndexOfEMenuItem(
     _In_ PPH_EMENU_ITEM Parent,
     _In_ PPH_EMENU_ITEM Item
     );
 
 PHLIBAPI
-VOID PhInsertEMenuItem(
+VOID
+NTAPI
+PhInsertEMenuItem(
     _Inout_ PPH_EMENU_ITEM Parent,
     _Inout_ PPH_EMENU_ITEM Item,
     _In_ ULONG Index
     );
 
 PHLIBAPI
-BOOLEAN PhRemoveEMenuItem(
+BOOLEAN
+NTAPI
+PhRemoveEMenuItem(
     _Inout_opt_ PPH_EMENU_ITEM Parent,
     _In_opt_ PPH_EMENU_ITEM Item,
     _In_opt_ ULONG Index
@@ -142,12 +154,16 @@ VOID PhRemoveAllEMenuItems(
     );
 
 PHLIBAPI
-PPH_EMENU PhCreateEMenu(
+PPH_EMENU
+NTAPI
+PhCreateEMenu(
     VOID
     );
 
 PHLIBAPI
-VOID PhDestroyEMenu(
+VOID
+NTAPI
+PhDestroyEMenu(
     _In_ PPH_EMENU Menu
     );
 
@@ -159,24 +175,32 @@ typedef struct _PH_EMENU_DATA
 } PH_EMENU_DATA, *PPH_EMENU_DATA;
 
 PHLIBAPI
-VOID PhInitializeEMenuData(
+VOID
+NTAPI
+PhInitializeEMenuData(
     _Out_ PPH_EMENU_DATA Data
     );
 
 PHLIBAPI
-VOID PhDeleteEMenuData(
+VOID
+NTAPI
+PhDeleteEMenuData(
     _Inout_ PPH_EMENU_DATA Data
     );
 
 PHLIBAPI
-HMENU PhEMenuToHMenu(
+HMENU
+NTAPI
+PhEMenuToHMenu(
     _In_ PPH_EMENU_ITEM Menu,
     _In_ ULONG Flags,
     _Inout_opt_ PPH_EMENU_DATA Data
     );
 
 PHLIBAPI
-VOID PhEMenuToHMenu2(
+VOID
+NTAPI
+PhEMenuToHMenu2(
     _In_ HMENU MenuHandle,
     _In_ PPH_EMENU_ITEM Menu,
     _In_ ULONG Flags,
@@ -184,13 +208,17 @@ VOID PhEMenuToHMenu2(
     );
 
 PHLIBAPI
-VOID PhHMenuToEMenuItem(
+VOID
+NTAPI
+PhHMenuToEMenuItem(
     _Inout_ PPH_EMENU_ITEM MenuItem,
     _In_ HMENU MenuHandle
     );
 
 PHLIBAPI
-VOID PhLoadResourceEMenuItem(
+VOID
+NTAPI
+PhLoadResourceEMenuItem(
     _Inout_ PPH_EMENU_ITEM MenuItem,
     _In_ HINSTANCE InstanceHandle,
     _In_ PCWSTR Resource,
@@ -201,7 +229,9 @@ VOID PhLoadResourceEMenuItem(
 #define PH_EMENU_SHOW_LEFTRIGHT 0x2
 
 PHLIBAPI
-PPH_EMENU_ITEM PhShowEMenu(
+PPH_EMENU_ITEM
+NTAPI
+PhShowEMenu(
     _In_ PPH_EMENU Menu,
     _In_ HWND WindowHandle,
     _In_ ULONG Flags,
@@ -211,7 +241,9 @@ PPH_EMENU_ITEM PhShowEMenu(
     );
 
 PHLIBAPI
-BOOLEAN PhSetFlagsEMenuItem(
+BOOLEAN
+NTAPI
+PhSetFlagsEMenuItem(
     _Inout_ PPH_EMENU_ITEM Item,
     _In_ ULONG Id,
     _In_ ULONG Mask,
@@ -219,7 +251,9 @@ BOOLEAN PhSetFlagsEMenuItem(
     );
 
 PHLIBAPI
-VOID PhSetFlagsAllEMenuItems(
+VOID
+NTAPI
+PhSetFlagsAllEMenuItems(
     _In_ PPH_EMENU_ITEM Item,
     _In_ ULONG Mask,
     _In_ ULONG Value
@@ -229,7 +263,9 @@ VOID PhSetFlagsAllEMenuItems(
 #define PH_EMENU_MODIFY_BITMAP 0x2
 
 PHLIBAPI
-VOID PhModifyEMenuItem(
+VOID
+NTAPI
+PhModifyEMenuItem(
     _Inout_ PPH_EMENU_ITEM Item,
     _In_ ULONG ModifyFlags,
     _In_ ULONG OwnedFlags,

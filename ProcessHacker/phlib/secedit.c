@@ -105,6 +105,7 @@ static VOID PhEditSecurityAdvanced(
     PhSecurityInformation_Release(Context);
 }
 
+_Function_class_(USER_THREAD_START_ROUTINE)
 static NTSTATUS PhEditSecurityAdvancedThread(
     _In_ PVOID Context
     )
@@ -254,9 +255,9 @@ ISecurityInformation *PhSecurityInformation_Create(
     info->RefCount = 1;
 
     info->WindowHandle = WindowHandle;
-    info->ObjectName = PhCreateString(ObjectName);
-    info->ObjectType = PhCreateString(ObjectType);
-    info->ObjectTypeMask = PhSecurityObjectType(info->ObjectType);
+    info->ObjectNameString = ObjectName ? PhCreateString(ObjectName) : NULL;
+    info->ObjectTypeString = PhCreateString(ObjectType);
+    info->ObjectType = PhSecurityObjectType(info->ObjectTypeString);
     info->OpenObject = OpenObject;
     info->CloseObject = CloseObject;
     info->GetObjectSecurity = GetObjectSecurity;
@@ -278,20 +279,26 @@ ISecurityInformation *PhSecurityInformation_Create(
             if (info->AccessEntriesArray[i].Specific)
                 SetFlag(info->AccessEntries[i].dwFlags, SI_ACCESS_SPECIFIC);
 
-            if (info->ObjectTypeMask == PH_SE_FILE_OBJECT_TYPE)
+            if (info->ObjectType == PH_SE_FILE_OBJECT_TYPE)
                 SetFlag(info->AccessEntries[i].dwFlags, OBJECT_INHERIT_ACE | CONTAINER_INHERIT_ACE);
         }
     }
 
-    if (info->ObjectType)
+    if (info->ObjectTypeString)
     {
         GENERIC_MAPPING genericMapping;
 
-        if (NT_SUCCESS(PhGetObjectTypeMask(&info->ObjectType->sr, &genericMapping)))
+        if (NT_SUCCESS(PhGetObjectTypeMask(&info->ObjectTypeString->sr, &genericMapping)))
         {
             memcpy(&info->GenericMapping, &genericMapping, sizeof(genericMapping));
             info->HaveGenericMapping = TRUE;
         }
+    }
+
+    if (PhIsNullOrEmptyString(info->ObjectNameString))
+    {
+        // Note: The ACUI dialog doesn't allow empty strings for the object name. (dmex)  
+        PhMoveReference(&info->ObjectNameString, PhCreateString(L"Unknown"));
     }
 
     return (ISecurityInformation *)info;
@@ -400,10 +407,10 @@ ULONG STDMETHODCALLTYPE PhSecurityInformation_Release(
         if (this->CloseObject)
             this->CloseObject(NULL, TRUE, this->Context);
 
-        if (this->ObjectName)
-            PhDereferenceObject(this->ObjectName);
-        if (this->ObjectType)
-            PhDereferenceObject(this->ObjectType);
+        if (this->ObjectNameString)
+            PhDereferenceObject(this->ObjectNameString);
+        if (this->ObjectTypeString)
+            PhDereferenceObject(this->ObjectTypeString);
         if (this->AccessEntries)
             PhFree(this->AccessEntries);
         if (this->AccessEntriesArray)
@@ -426,21 +433,21 @@ HRESULT STDMETHODCALLTYPE PhSecurityInformation_GetObjectInformation(
 
     memset(ObjectInfo, 0, sizeof(SI_OBJECT_INFO));
     ObjectInfo->dwFlags = SI_EDIT_ALL | SI_ADVANCED | SI_EDIT_EFFECTIVE;
-    ObjectInfo->pszObjectName = PhGetString(this->ObjectName);
+    ObjectInfo->pszObjectName = PhGetString(this->ObjectNameString);
 
     if (WindowsVersion >= WINDOWS_8)
     {
         SetFlag(ObjectInfo->dwFlags, SI_VIEW_ONLY | SI_EDIT_EFFECTIVE);
     }
 
-    switch (this->ObjectTypeMask)
+    switch (this->ObjectType)
     {
     case PH_SE_FILE_OBJECT_TYPE:
         {
             SetFlag(ObjectInfo->dwFlags, SI_ENABLE_EDIT_ATTRIBUTE_CONDITION | SI_MAY_WRITE); // SI_RESET | SI_READONLY
 
             // Check if the string is a filename or directory.
-            if (this->ObjectName && PhFindLastCharInString(this->ObjectName, 0, OBJ_NAME_PATH_SEPARATOR) == SIZE_MAX)
+            if (this->ObjectNameString && PhFindLastCharInString(this->ObjectNameString, 0, OBJ_NAME_PATH_SEPARATOR) == SIZE_MAX)
             {
                 SetFlag(ObjectInfo->dwFlags, SI_CONTAINER); // directory
             }
@@ -528,7 +535,10 @@ HRESULT STDMETHODCALLTYPE PhSecurityInformation_GetSecurity(
         }
 
         if (!NT_SUCCESS(status))
+        {
+            // Note: The ACUI doesn't support HRESULT_FROM_NT (dmex)
             return HRESULT_FROM_WIN32(PhNtStatusToDosError(status));
+        }
     }
 
     sdLength = RtlLengthSecurityDescriptor(securityDescriptor);
@@ -572,10 +582,8 @@ HRESULT STDMETHODCALLTYPE PhSecurityInformation_SetSecurity(
             );
     }
 
-    if (!NT_SUCCESS(status))
-        return HRESULT_FROM_WIN32(PhNtStatusToDosError(status));
-
-    return S_OK;
+    // Note: The ACUI doesn't support HRESULT_FROM_NT (dmex)
+    return HRESULT_FROM_WIN32(PhNtStatusToDosError(status));
 }
 
 HRESULT STDMETHODCALLTYPE PhSecurityInformation_GetAccessRights(
@@ -605,7 +613,7 @@ HRESULT STDMETHODCALLTYPE PhSecurityInformation_MapGeneric(
 {
     PhSecurityInformation* this = (PhSecurityInformation*)This;
 
-    if (this->ObjectTypeMask == PH_SE_FILE_OBJECT_TYPE)
+    if (this->ObjectType == PH_SE_FILE_OBJECT_TYPE)
     {
         static GENERIC_MAPPING genericMappings =
         {
@@ -637,7 +645,7 @@ HRESULT STDMETHODCALLTYPE PhSecurityInformation_GetInheritTypes(
 
     PhSecurityInformation* this = (PhSecurityInformation*)This;
 
-    if (this->ObjectTypeMask == PH_SE_WMIDEF_OBJECT_TYPE)
+    if (this->ObjectType == PH_SE_WMIDEF_OBJECT_TYPE)
     {
         static SI_INHERIT_TYPE inheritTypes[] =
         {
@@ -682,7 +690,10 @@ HRESULT STDMETHODCALLTYPE PhSecurityInformation_PropertySheetPageCallback(
         if (!this->IsPage)
             PhCenterWindow(GetParent(hwnd), GetParent(GetParent(hwnd)));
 
-        PhInitializeWindowTheme(GetParent(hwnd), PhEnableThemeSupport);
+        if (this->IsPage)
+            PhInitializeWindowTheme(hwnd, PhEnableThemeSupport);
+        else
+            PhInitializeWindowTheme(GetParent(hwnd), PhEnableThemeSupport);
     }
 
     return E_NOTIMPL;
@@ -822,12 +833,12 @@ ULONG STDMETHODCALLTYPE PhSecurityInformation3_Release(
 
 HRESULT STDMETHODCALLTYPE PhSecurityInformation3_GetFullResourceName(
     _In_ ISecurityInformation3 *This,
-    _Outptr_ PCWSTR *ppszResourceName
+    _Outptr_ PCWSTR *ResourceName
     )
 {
     PhSecurityInformation3 *this = (PhSecurityInformation3 *)This;
 
-    *ppszResourceName = PhGetString(this->Context->ObjectName);
+    *ResourceName = PhGetString(this->Context->ObjectNameString);
 
     return S_OK;
 }
@@ -898,8 +909,8 @@ ULONG STDMETHODCALLTYPE PhSecurityDataObject_Release(
 
 HRESULT STDMETHODCALLTYPE PhSecurityDataObject_GetData(
     _In_ IDataObject *This,
-    _In_ FORMATETC *pformatetcIn,
-    _Out_ STGMEDIUM *pmedium
+    _In_ FORMATETC *Format,
+    _Out_ STGMEDIUM *Medium
     )
 {
     PhSecurityIDataObject *this = (PhSecurityIDataObject *)This;
@@ -909,8 +920,8 @@ HRESULT STDMETHODCALLTYPE PhSecurityDataObject_GetData(
 
     if (!sidInfoList)
     {
-        pmedium = NULL;
-        return S_FALSE;
+        Medium = NULL;
+        return HRESULT_FROM_WIN32(ERROR_OUTOFMEMORY);
     }
 
     sidInfoList->cItems = this->SidCount;
@@ -941,25 +952,25 @@ HRESULT STDMETHODCALLTYPE PhSecurityDataObject_GetData(
                 break;
             }
 
-            sidInfo.pwzCommonName = (PWSTR)PhGetString(sidString);
+            sidInfo.pwzCommonName = PhGetString(sidString);
             PhAddItemList(this->NameCache, sidString);
         }
         else if (sidString = PhGetAppContainerPackageName(sidInfo.pSid))
         {
             PhMoveReference(&sidString, PhConcatStringRefZ(&sidString->sr, L" (APP_PACKAGE)"));
-            sidInfo.pwzCommonName = (PWSTR)PhGetString(sidString);
+            sidInfo.pwzCommonName = PhGetString(sidString);
             PhAddItemList(this->NameCache, sidString);
         }
         else if (sidString = PhGetAppContainerName(sidInfo.pSid))
         {
             PhMoveReference(&sidString, PhConcatStringRefZ(&sidString->sr, L" (APP_CONTAINER)"));
-            sidInfo.pwzCommonName = (PWSTR)PhGetString(sidString);
+            sidInfo.pwzCommonName = PhGetString(sidString);
             PhAddItemList(this->NameCache, sidString);
         }
         else if (sidString = PhGetCapabilitySidName(sidInfo.pSid))
         {
             PhMoveReference(&sidString, PhConcatStringRefZ(&sidString->sr, L" (APP_CAPABILITY)"));
-            sidInfo.pwzCommonName = (PWSTR)PhGetString(sidString);
+            sidInfo.pwzCommonName = PhGetString(sidString);
             PhAddItemList(this->NameCache, sidString);
         }
         else
@@ -973,7 +984,7 @@ HRESULT STDMETHODCALLTYPE PhSecurityDataObject_GetData(
                 case SECURITY_UMFD_BASE_RID:
                     {
                         PhMoveReference(&sidString, PhCreateString(L"Font Driver Host\\UMFD"));
-                        sidInfo.pwzCommonName = (PWSTR)PhGetString(sidString);
+                        sidInfo.pwzCommonName = PhGetString(sidString);
                         PhAddItemList(this->NameCache, sidString);
                     }
                     break;
@@ -986,7 +997,7 @@ HRESULT STDMETHODCALLTYPE PhSecurityDataObject_GetData(
                 if (subAuthority == 1)
                 {
                     PhMoveReference(&sidString, PhGetAzureDirectoryObjectSid(sidInfo.pSid));
-                    sidInfo.pwzCommonName = (PWSTR)PhGetString(sidString);
+                    sidInfo.pwzCommonName = PhGetString(sidString);
                     PhAddItemList(this->NameCache, sidString);
                 }
             }
@@ -995,8 +1006,8 @@ HRESULT STDMETHODCALLTYPE PhSecurityDataObject_GetData(
         sidInfoList->aSidInfo[i] = sidInfo;
     }
 
-    pmedium->tymed = TYMED_HGLOBAL;
-    pmedium->hGlobal = (HGLOBAL)sidInfoList;
+    Medium->tymed = TYMED_HGLOBAL;
+    Medium->hGlobal = (HGLOBAL)sidInfoList;
 
     return S_OK;
 }
@@ -1141,16 +1152,17 @@ HRESULT STDMETHODCALLTYPE PhSecurityObjectTypeInfo_GetInheritSource(
     PINHERITED_FROM result;
     ULONG status;
 
-    if (this->Context->ObjectTypeMask != PH_SE_FILE_OBJECT_TYPE)
-        return S_FALSE;
+    if (PhIsNullOrEmptyString(this->Context->ObjectNameString))
+        return HRESULT_FROM_WIN32(ERROR_INVALID_STATE);
 
-    result = (PINHERITED_FROM)LocalAlloc(LPTR, ((ULONGLONG)Acl->AceCount + 1) * sizeof(INHERITED_FROM));
+    if (this->Context->ObjectType != PH_SE_FILE_OBJECT_TYPE)
+        return HRESULT_FROM_WIN32(ERROR_INVALID_STATE);
 
-    if (!result)
-        return S_FALSE;
+    if (!(result = (PINHERITED_FROM)LocalAlloc(LPTR, ((ULONGLONG)Acl->AceCount + 1) * sizeof(INHERITED_FROM))))
+        return HRESULT_FROM_WIN32(ERROR_OUTOFMEMORY);
 
     if ((status = GetInheritanceSource(
-        PhGetString(this->Context->ObjectName),
+        PhGetString(this->Context->ObjectNameString),
         SE_FILE_OBJECT,
         SecurityInfo,
         TRUE, // Container
@@ -1252,10 +1264,8 @@ HRESULT STDMETHODCALLTYPE PhEffectivePermission_GetEffectivePermission(
     if (!NT_SUCCESS(status))
         return HRESULT_FROM_WIN32(PhNtStatusToDosError(status));
 
-    accessRights = (PACCESS_MASK)LocalAlloc(LPTR, sizeof(PACCESS_MASK) + sizeof(ACCESS_MASK));
-
-    if (!accessRights)
-        return S_FALSE;
+    if (!(accessRights = (PACCESS_MASK)LocalAlloc(LPTR, sizeof(PACCESS_MASK) + sizeof(ACCESS_MASK))))
+        return HRESULT_FROM_WIN32(ERROR_OUTOFMEMORY);
 
     PhBuildTrusteeWithSid(&trustee, UserSid);
     status = GetEffectiveRightsFromAcl(dacl, &trustee, accessRights);
@@ -1353,7 +1363,7 @@ NTSTATUS PhStdGetObjectSecurity(
     if (!NT_SUCCESS(status))
         return status;
 
-    switch (this->ObjectTypeMask)
+    switch (this->ObjectType)
     {
     case PH_SE_FILE_OBJECT_TYPE:
         status = PhpGetObjectSecurityWithTimeout(handle, SecurityInformation, SecurityDescriptor);
@@ -1426,7 +1436,7 @@ NTSTATUS PhStdSetObjectSecurity(
     if (!NT_SUCCESS(status))
         return status;
 
-    switch (this->ObjectTypeMask)
+    switch (this->ObjectType)
     {
     case PH_SE_FILE_OBJECT_TYPE:
         status = PhSetObjectSecurity(handle, SecurityInformation, SecurityDescriptor);
@@ -1660,11 +1670,11 @@ NTSTATUS PhGetSeObjectSecurityTokenDefault(
         allocationLength = SECURITY_DESCRIPTOR_MIN_LENGTH + defaultDacl->DefaultDacl->AclSize;
 
         securityDescriptor = PhAllocateZero(allocationLength);
-        status = RtlCreateSecurityDescriptor(securityDescriptor, SECURITY_DESCRIPTOR_REVISION);
+        status = PhCreateSecurityDescriptor(securityDescriptor, SECURITY_DESCRIPTOR_REVISION);
         if (!NT_SUCCESS(status))
             goto CleanupExit;
 
-        status = RtlSetDaclSecurityDescriptor(securityDescriptor, TRUE, defaultDacl->DefaultDacl, FALSE);
+        status = PhSetDaclSecurityDescriptor(securityDescriptor, TRUE, defaultDacl->DefaultDacl, FALSE);
         if (!NT_SUCCESS(status))
             goto CleanupExit;
 
@@ -1684,6 +1694,7 @@ NTSTATUS PhGetSeObjectSecurityTokenDefault(
         *SecurityDescriptor = securityRelative;
 
 CleanupExit:
+        assert(RtlValidSecurityDescriptor(securityDescriptor));
         PhFree(securityDescriptor);
         PhFree(defaultDacl);
     }
@@ -1744,12 +1755,12 @@ NTSTATUS PhGetSeObjectSecurityPowerGuid(
         {
             if (FlagOn(SecurityInformation, OWNER_SECURITY_INFORMATION))
             {
-                RtlSetOwnerSecurityDescriptor(securityDescriptor, PhSeAdministratorsSid(), TRUE);
+                PhSetOwnerSecurityDescriptor(securityDescriptor, PhSeAdministratorsSid(), TRUE);
             }
 
             if (FlagOn(SecurityInformation, GROUP_SECURITY_INFORMATION))
             {
-                RtlSetGroupSecurityDescriptor(securityDescriptor, PhSeAdministratorsSid(), TRUE);
+                PhSetGroupSecurityDescriptor(securityDescriptor, PhSeAdministratorsSid(), TRUE);
             }
 
             *SecurityDescriptor = PhAllocateCopy(

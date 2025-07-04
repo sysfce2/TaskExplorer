@@ -706,7 +706,7 @@ CWinWnd::SWndInfo CWinWnd::GetWndInfo() const
 // https://stackoverflow.com/questions/38205375/enumwindows-function-in-win10-enumerates-only-desktop-apps
 //
 
-typedef NTSTATUS (WINAPI *NtUserBuildHwndList) (
+typedef NTSTATUS (WINAPI *_NtUserBuildHwndList) (
 	HDESK in_hDesk, 
 	HWND  in_hWndNext, 
 	BOOL  in_EnumChildren, 
@@ -731,11 +731,11 @@ HWND* BuildWindowList
 	UINT  lv_NtStatus;
 	HWND *lv_List;
 
-	static NtUserBuildHwndList lib_NtUserBuildHwndListW10 = NULL;
+	static _NtUserBuildHwndList lib_NtUserBuildHwndListW10 = NULL;
 	static PH_INITONCE initOnce = PH_INITONCE_INIT;
 	if (PhBeginInitOnce(&initOnce))
 	{
-		lib_NtUserBuildHwndListW10 = (NtUserBuildHwndList)PhGetModuleProcAddress(L"win32u.dll", "NtUserBuildHwndList");
+		lib_NtUserBuildHwndListW10 = (_NtUserBuildHwndList)PhGetModuleProcAddress(L"win32u.dll", "NtUserBuildHwndList");
 
 		PhEndInitOnce(&initOnce);
 	}

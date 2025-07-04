@@ -24,17 +24,14 @@ namespace CustomBuildTool
 
         public static readonly ImmutableArray<BuildFile> Build_Release_Files =
         [
+            new BuildFile("\\systeminformer-build-bin.zip", true),
             new BuildFile("\\systeminformer-build-release-setup.exe", true),
-            new BuildFile("\\systeminformer-build-release-bin.zip", true),
             //new BuildFile("\\systeminformer-build-preview-setup.exe", true),
-            //new BuildFile("\\systeminformer-build-preview-bin.zip", true),
             new BuildFile("\\systeminformer-build-canary-setup.exe", true),
-            new BuildFile("\\systeminformer-build-canary-bin.zip", true),
             //new BuildFile("\\systeminformer-build-developer-setup.exe", true),
-            //new BuildFile("\\systeminformer-build-developer-bin.zip", true),
             new BuildFile("\\systeminformer-build-src.zip", false),
             new BuildFile("\\systeminformer-build-sdk.zip", false),
-            new BuildFile("\\systeminformer-build-pdb.zip", true),
+            new BuildFile("\\systeminformer-build-pdb.zip", false),
             //new BuildFile("\\systeminformer-build-checksums.txt", false),
         ];
 
@@ -54,11 +51,13 @@ namespace CustomBuildTool
 
         public static readonly ImmutableArray<string> Build_Phnt_Headers =
         [
+            "ntafd.h",
             "ntbcd.h",
             "ntdbg.h",
             "ntexapi.h",
             "ntgdi.h",
             "ntimage.h",
+            "ntintsafe.h",
             "ntioapi.h",
             "ntkeapi.h",
             "ntldr.h",
@@ -76,6 +75,8 @@ namespace CustomBuildTool
             "ntrtl.h",
             "ntsam.h",
             "ntseapi.h",
+            "ntsmss.h",
+            "ntstrsafe.h",
             "ntsxs.h",
             "nttmapi.h",
             "nttp.h",
@@ -89,6 +90,7 @@ namespace CustomBuildTool
             "phnt_windows.h",
             "smbios.h",
             "subprocesstag.h",
+            "usermgr.h",
             "winsta.h"
         ];
 
@@ -137,6 +139,7 @@ namespace CustomBuildTool
             "svcsup.h",
             "symprv.h",
             "templ.h",
+            "trace.h",
             "treenew.h",
             "verify.h",
             "workqueue.h"
@@ -150,7 +153,7 @@ namespace CustomBuildTool
         ];
     }
 
-    public readonly struct BuildFile
+    public class BuildFile
     {
         public readonly string FileName;
         public readonly bool UploadCanary;

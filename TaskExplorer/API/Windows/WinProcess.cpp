@@ -907,7 +907,7 @@ bool CWinProcess::UpdateDynamicData(struct _SYSTEM_PROCESS_INFORMATION* Process,
 	m_PeakPagefileUsage = Process->PeakPagefileUsage;
 	m_WorkingSetSize = Process->WorkingSetSize;
 	m_PeakWorkingSetSize = Process->PeakWorkingSetSize;
-	m_WorkingSetPrivateSize = Process->WorkingSetPrivateSize.QuadPart;
+	m_WorkingSetPrivateSize = Process->WorkingSetPrivateSize;
 	m_VirtualSize = Process->VirtualSize;
 	m_PeakVirtualSize = Process->PeakVirtualSize;
 	//m_PageFaultCount = Process->PageFaultCount;

@@ -11,17 +11,25 @@
 
 #include "setup.h"
 
-NTSTATUS SetupUninstallBuild(
+NTSTATUS CALLBACK SetupUninstallBuild(
     _In_ PPH_SETUP_CONTEXT Context
     )
 {
+    NTSTATUS status;
+
     // Stop the application.
-    if (!SetupShutdownApplication(Context))
+    if (!NT_SUCCESS(status = SetupShutdownApplication(Context)))
+    {
+        Context->LastStatus = status;
         goto CleanupExit;
+    }
 
     // Stop the kernel driver.
-    if (!SetupUninstallDriver(Context))
+    if (!NT_SUCCESS(status = SetupUninstallDriver(Context)))
+    {
+        Context->LastStatus = status;
         goto CleanupExit;
+    }
 
     // Remove autorun.
     SetupDeleteWindowsOptions(Context);
@@ -38,27 +46,27 @@ NTSTATUS SetupUninstallBuild(
     // Remove the previous installation.
     if (!NT_SUCCESS(PhDeleteDirectoryWin32(&Context->SetupInstallPath->sr)))
     {
-        static PH_STRINGREF ksiFileName = PH_STRINGREF_INIT(L"ksi.dll");
-        static PH_STRINGREF ksiOldFileName = PH_STRINGREF_INIT(L"ksi.dll-old");
+        static CONST PH_STRINGREF ksiFileName = PH_STRINGREF_INIT(L"ksi.dll");
+        static CONST PH_STRINGREF ksiOldFileName = PH_STRINGREF_INIT(L"ksi.dll-old");
         PPH_STRING ksiFile;
         PPH_STRING ksiOldFile;
 
         ksiFile = PhConcatStringRef3(
             &Context->SetupInstallPath->sr,
-            &PhNtPathSeperatorString,
+            &PhNtPathSeparatorString,
             &ksiFileName
             );
 
         ksiOldFile = PhConcatStringRef3(
             &Context->SetupInstallPath->sr,
-            &PhNtPathSeperatorString,
+            &PhNtPathSeparatorString,
             &ksiOldFileName
             );
 
         PhMoveFileWin32(PhGetString(ksiFile), PhGetString(ksiOldFile), FALSE);
 
-        MoveFileExW(PhGetString(ksiOldFile), NULL, MOVEFILE_DELAY_UNTIL_REBOOT);
-        MoveFileExW(PhGetString(Context->SetupInstallPath), NULL, MOVEFILE_DELAY_UNTIL_REBOOT);
+        MoveFileEx(PhGetString(ksiOldFile), NULL, MOVEFILE_DELAY_UNTIL_REBOOT);
+        MoveFileEx(PhGetString(Context->SetupInstallPath), NULL, MOVEFILE_DELAY_UNTIL_REBOOT);
 
         PhDereferenceObject(ksiOldFile);
         PhDereferenceObject(ksiFile);
@@ -118,12 +126,12 @@ HRESULT CALLBACK TaskDialogUninstallConfirmCallbackProc(
 
                     if (!NT_SUCCESS(status = PhGetProcessCommandLineStringRef(&applicationCommandLine)))
                     {
-                        context->ErrorCode = WIN32_FROM_NTSTATUS(status);
+                        context->LastStatus = status;
                         return S_FALSE;
                     }
                     if (!(applicationFileName = PhGetApplicationFileNameWin32()))
                     {
-                        context->ErrorCode = ERROR_NOT_ENOUGH_MEMORY;
+                        context->LastStatus = STATUS_NO_MEMORY;
                         return S_FALSE;
                     }
 
@@ -142,7 +150,7 @@ HRESULT CALLBACK TaskDialogUninstallConfirmCallbackProc(
                     }
                     else
                     {
-                        context->ErrorCode = WIN32_FROM_NTSTATUS(status);
+                        context->LastStatus = status;
                         PhDereferenceObject(applicationFileName);
                         return S_FALSE;
                     }
@@ -257,7 +265,7 @@ VOID ShowUninstallCompletedPageDialog(
     else
         config.pszContent = L"Click close to exit setup.";
 
-    TaskDialogNavigatePage(Context->DialogHandle, &config);
+    PhTaskDialogNavigatePage(Context->DialogHandle, &config);
 }
 
 VOID ShowUninstallingPageDialog(
@@ -278,7 +286,7 @@ VOID ShowUninstallingPageDialog(
     config.pszWindowTitle = PhApplicationName;
     config.pszMainInstruction = L"Uninstalling System Informer...";
 
-    TaskDialogNavigatePage(Context->DialogHandle, &config);
+    PhTaskDialogNavigatePage(Context->DialogHandle, &config);
 }
 
 VOID ShowUninstallErrorPageDialog(
@@ -297,13 +305,13 @@ VOID ShowUninstallErrorPageDialog(
 
     config.cxWidth = 200;
     config.pszWindowTitle = PhApplicationName;
-    if (Context->ErrorCode)
-        config.pszMainInstruction = PhGetStatusMessage(0, Context->ErrorCode)->Buffer;
+    if (Context->LastStatus)
+        config.pszMainInstruction = PhGetStatusMessage(Context->LastStatus, 0)->Buffer;
     else
         config.pszMainInstruction = L"Uninstall failed with an error.";
     config.pszContent = L"Click retry to try again or close to exit setup.";
 
-    TaskDialogNavigatePage(Context->DialogHandle, &config);
+    PhTaskDialogNavigatePage(Context->DialogHandle, &config);
 }
 
 VOID ShowUninstallPageDialog(
@@ -334,5 +342,5 @@ VOID ShowUninstallPageDialog(
     config.dwCommonButtons = TDCBF_CANCEL_BUTTON;
     config.nDefaultButton = IDCANCEL;
 
-    TaskDialogNavigatePage(Context->DialogHandle, &config);
+    PhTaskDialogNavigatePage(Context->DialogHandle, &config);
 }

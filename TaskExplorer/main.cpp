@@ -181,7 +181,7 @@ int main(int argc, char *argv[])
 		}
 		else if (DrvStatus.GetStatus() == STATUS_SI_DYNDATA_UNSUPPORTED_KERNEL || DrvStatus.GetStatus() == STATUS_UNKNOWN_REVISION || DynDataUpdate != 0) 
 		{
-			QString windowsVersion = QString::fromWCharArray(WindowsVersionString);
+			QString windowsVersion = QString("%1").arg(WindowsVersion); // todo
 			QString kernelVersion = CastPhString(KsiGetKernelVersionString());
 
 			Message = CTaskExplorer::tr("The current DynData for the KTaskExplorer driver does not yet supported on your windows kernel version.<br />"

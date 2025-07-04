@@ -19,27 +19,40 @@
 
 #include <ph.h>
 #include <apiimport.h>
-
 #include <accctrl.h>
 #include <lsasup.h>
 #include <mapldr.h>
 
+ /**
+  * Opens a handle to the local LSA policy.
+  *
+  * @return NTSTATUS Successful or errant status.
+  */
 NTSTATUS PhOpenLsaPolicy(
     _Out_ PLSA_HANDLE PolicyHandle,
     _In_ ACCESS_MASK DesiredAccess,
     _In_opt_ PUNICODE_STRING SystemName
     )
 {
+    NTSTATUS status;
     OBJECT_ATTRIBUTES objectAttributes;
 
-    InitializeObjectAttributes(&objectAttributes, NULL, 0, NULL, NULL);
+    InitializeObjectAttributes(
+        &objectAttributes,
+        NULL,
+        OBJ_EXCLUSIVE,
+        NULL,
+        NULL
+        );
 
-    return LsaOpenPolicy(
+    status = LsaOpenPolicy(
         SystemName,
         &objectAttributes,
         DesiredAccess,
         PolicyHandle
         );
+
+    return status;
 }
 
 /**
@@ -102,8 +115,7 @@ LSA_HANDLE PhGetLookupPolicyHandle(
  * \param PrivilegeName A variable which receives a pointer to a string containing the privilege
  * name. You must free the string using PhDereferenceObject() when you no longer need it.
  */
-_Success_(return)
-BOOLEAN PhLookupPrivilegeName(
+NTSTATUS PhLookupPrivilegeName(
     _In_ PLUID PrivilegeValue,
     _Out_ PPH_STRING *PrivilegeName
     )
@@ -118,12 +130,12 @@ BOOLEAN PhLookupPrivilegeName(
         );
 
     if (!NT_SUCCESS(status))
-        return FALSE;
+        return status;
 
     *PrivilegeName = PhCreateStringFromUnicodeString(name);
     LsaFreeMemory(name);
 
-    return TRUE;
+    return status;
 }
 
 /**
@@ -134,8 +146,7 @@ BOOLEAN PhLookupPrivilegeName(
  * privilege's display name. You must free the string using PhDereferenceObject() when you no longer
  * need it.
  */
-_Success_(return)
-BOOLEAN PhLookupPrivilegeDisplayName(
+NTSTATUS PhLookupPrivilegeDisplayName(
     _In_ PPH_STRINGREF PrivilegeName,
     _Out_ PPH_STRING *PrivilegeDisplayName
     )
@@ -146,7 +157,7 @@ BOOLEAN PhLookupPrivilegeDisplayName(
     SHORT language;
 
     if (!PhStringRefToUnicodeString(PrivilegeName, &privilegeName))
-        return FALSE;
+        return STATUS_NAME_TOO_LONG;
 
     status = LsaLookupPrivilegeDisplayName(
         PhGetLookupPolicyHandle(),
@@ -156,12 +167,12 @@ BOOLEAN PhLookupPrivilegeDisplayName(
         );
 
     if (!NT_SUCCESS(status))
-        return FALSE;
+        return status;
 
     *PrivilegeDisplayName = PhCreateStringFromUnicodeString(displayName);
     LsaFreeMemory(displayName);
 
-    return TRUE;
+    return status;
 }
 
 /**
@@ -170,22 +181,24 @@ BOOLEAN PhLookupPrivilegeDisplayName(
  * \param PrivilegeName The name of a privilege.
  * \param PrivilegeValue A variable which receives the LUID of the privilege.
  */
-_Success_(return)
-BOOLEAN PhLookupPrivilegeValue(
+NTSTATUS PhLookupPrivilegeValue(
     _In_ PPH_STRINGREF PrivilegeName,
     _Out_ PLUID PrivilegeValue
     )
 {
+    NTSTATUS status;
     UNICODE_STRING privilegeName;
 
     if (!PhStringRefToUnicodeString(PrivilegeName, &privilegeName))
-        return FALSE;
+        return STATUS_NAME_TOO_LONG;
 
-    return NT_SUCCESS(LsaLookupPrivilegeValue(
+    status = LsaLookupPrivilegeValue(
         PhGetLookupPolicyHandle(),
         &privilegeName,
         PrivilegeValue
-        ));
+        );
+
+    return status;
 }
 
 /**
@@ -337,7 +350,7 @@ VOID PhLookupSids(
                 {
                     translatedNames[i] = PhConcatStringRef3(
                         &domainName->sr,
-                        &PhNtPathSeperatorString,
+                        &PhNtPathSeparatorString,
                         &userName->sr
                         );
                 }
@@ -580,19 +593,24 @@ PPH_STRING PhSidToStringSid(
     )
 {
     PPH_STRING string;
-    UNICODE_STRING us;
+    UNICODE_STRING unicodeString;
 
     string = PhCreateStringEx(NULL, SECURITY_MAX_SID_STRING_CHARACTERS * sizeof(WCHAR));
-    PhStringRefToUnicodeString(&string->sr, &us);
+
+    if (!PhStringRefToUnicodeString(&string->sr, &unicodeString))
+    {
+        PhDereferenceObject(string);
+        return NULL;
+    }
 
     if (NT_SUCCESS(RtlConvertSidToUnicodeString(
-        &us,
+        &unicodeString,
         Sid,
         FALSE
         )))
     {
-        string->Length = us.Length;
-        string->Buffer[us.Length / sizeof(WCHAR)] = UNICODE_NULL;
+        string->Length = unicodeString.Length;
+        string->Buffer[unicodeString.Length / sizeof(WCHAR)] = UNICODE_NULL;
 
         return string;
     }
@@ -852,7 +870,7 @@ VOID PhInitializeCapabilitySidCache(
 
     if (capabilityListFileName = PhGetApplicationDirectoryFileNameZ(L"Resources\\CapsList.txt", TRUE))
     {
-        capabilityListString = PhFileReadAllText(&capabilityListFileName->sr, TRUE);
+        PhFileReadAllText(&capabilityListString, &capabilityListFileName->sr, TRUE);
         PhDereferenceObject(capabilityListFileName);
     }
 
@@ -1057,8 +1075,8 @@ VOID PhInitializeCapabilityGuidCache(
     _Inout_ PPH_ARRAY CapabilityGuidArrayList
     )
 {
-    static PH_STRINGREF accessManagerKeyPath = PH_STRINGREF_INIT(L"Software\\Microsoft\\Windows\\CurrentVersion\\CapabilityAccessManager\\Capabilities");
-    static PH_STRINGREF deviceAccessKeyPath = PH_STRINGREF_INIT(L"Software\\Microsoft\\Windows\\CurrentVersion\\DeviceAccess\\CapabilityMappings");
+    static CONST PH_STRINGREF accessManagerKeyPath = PH_STRINGREF_INIT(L"Software\\Microsoft\\Windows\\CurrentVersion\\CapabilityAccessManager\\Capabilities");
+    static CONST PH_STRINGREF deviceAccessKeyPath = PH_STRINGREF_INIT(L"Software\\Microsoft\\Windows\\CurrentVersion\\DeviceAccess\\CapabilityMappings");
     HANDLE keyHandle;
 
     PhInitializeArray(CapabilityGuidArrayList, sizeof(PH_CAPABILITY_GUID_ENTRY), 100);
@@ -1159,153 +1177,135 @@ NTSTATUS PhEnumerateAccounts(
     _In_opt_ PVOID Context
     )
 {
-    static PH_INITONCE initOnce = PH_INITONCE_INIT;
-    static ULONG (WINAPI* NetUserEnum_I)( // NET_API_STATUS
-        _In_ PCWSTR servername,
-        _In_ ULONG level,
-        _In_ ULONG filter,
-        _Out_ PVOID* bufptr,
-        _In_ ULONG prefmaxlen,
-        _Out_ PULONG entriesread,
-        _Out_ PULONG totalentries,
-        _Inout_ PULONG resume_handle
-        );
-    static ULONG (WINAPI* NetApiBufferFree_I)(
-        _Frees_ptr_opt_ PVOID Buffer
-        );
-    typedef struct _USER_INFO_0
-    {
-        PWSTR usri0_name;
-    } USER_INFO_0, *PUSER_INFO_0;
-    #define FILTER_NORMAL_ACCOUNT (0x0002)
-    ULONG status;
-    PUSER_INFO_0 userinfoArray = NULL;
-    ULONG userinfoEntriesRead = 0;
-    ULONG userinfoTotalEntries = 0;
-
-    if (PhBeginInitOnce(&initOnce))
-    {
-        PVOID baseAddress;
-
-        if (baseAddress = PhLoadLibrary(L"netapi32.dll"))
-        {
-            NetUserEnum_I = PhGetDllBaseProcedureAddress(baseAddress, "NetUserEnum", 0);
-            NetApiBufferFree_I = PhGetDllBaseProcedureAddress(baseAddress, "NetApiBufferFree", 0);
-        }
-
-        PhEndInitOnce(&initOnce);
-    }
-
-    if (!(NetUserEnum_I && NetApiBufferFree_I))
-        return STATUS_UNSUCCESSFUL;
-
-    NetUserEnum_I(
-        NULL,
-        0,
-        FILTER_NORMAL_ACCOUNT,
-        &userinfoArray,
-        ULONG_MAX,
-        &userinfoEntriesRead,
-        &userinfoTotalEntries,
-        NULL
-        );
-
-    if (userinfoArray)
-    {
-        NetApiBufferFree_I(userinfoArray);
-        userinfoArray = NULL;
-    }
-
-    status = NetUserEnum_I(
-        NULL,
-        0,
-        FILTER_NORMAL_ACCOUNT,
-        &userinfoArray,
-        ULONG_MAX,
-        &userinfoEntriesRead,
-        &userinfoTotalEntries,
-        NULL
-        );
-
-    if (status == ERROR_SUCCESS)
-    {
-        PPH_STRING userName;
-        PPH_STRING userDomainName = NULL;
-
-        if (userName = PhGetSidFullName(PhGetOwnTokenAttributes().TokenSid, TRUE, NULL))
-        {
-            userDomainName = PhGetBaseDirectory(userName);
-            PhDereferenceObject(userName);
-        }
-
-        if (userDomainName)
-        {
-            for (ULONG i = 0; i < userinfoEntriesRead; i++)
-            {
-                PUSER_INFO_0 entry = PTR_ADD_OFFSET(userinfoArray, sizeof(USER_INFO_0) * i);
-
-                if (entry->usri0_name)
-                {
-                    PPH_STRING usernameString;
-                    PH_STRINGREF usri10String;
-
-                    PhInitializeStringRefLongHint(&usri10String, entry->usri0_name);
-
-                    usernameString = PhConcatStringRef3(
-                        &userDomainName->sr,
-                        &PhNtPathSeperatorString,
-                        &usri10String
-                        );
-
-                    if (!NT_SUCCESS(Callback(usernameString, Context)))
-                    {
-                        PhDereferenceObject(usernameString);
-                        break;
-                    }
-
-                    PhDereferenceObject(usernameString);
-                }
-            }
-
-            PhDereferenceObject(userDomainName);
-        }
-    }
-
-    if (userinfoArray)
-        NetApiBufferFree_I(userinfoArray);
-
-    //LSA_HANDLE policyHandle;
-    //LSA_ENUMERATION_HANDLE enumerationContext = 0;
-    //PLSA_ENUMERATION_INFORMATION buffer;
-    //ULONG count;
-    //PPH_STRING name;
-    //SID_NAME_USE nameUse;
-    //
-    //if (NT_SUCCESS(PhOpenLsaPolicy(&policyHandle, POLICY_VIEW_LOCAL_INFORMATION, NULL)))
+    //static PH_INITONCE initOnce = PH_INITONCE_INIT;
+    //static ULONG (WINAPI* NetUserEnum_I)( // NET_API_STATUS
+    //    _In_ PCWSTR servername,
+    //    _In_ ULONG level,
+    //    _In_ ULONG filter,
+    //    _Out_ PVOID* bufptr,
+    //    _In_ ULONG prefmaxlen,
+    //    _Out_ PULONG entriesread,
+    //    _Out_ PULONG totalentries,
+    //    _Inout_ PULONG resume_handle
+    //    );
+    //static ULONG (WINAPI* NetApiBufferFree_I)(
+    //    _Frees_ptr_opt_ PVOID Buffer
+    //    );
+    //typedef struct _USER_INFO_0
     //{
-    //    while (NT_SUCCESS(LsaEnumerateAccounts(
-    //        policyHandle,
-    //        &enumerationContext,
-    //        &buffer,
-    //        0x100,
-    //        &count
-    //        )))
+    //    LPWSTR usri0_name;
+    //} USER_INFO_0, *PUSER_INFO_0;
+    //#define FILTER_NORMAL_ACCOUNT (0x0002)
+    //ULONG status;
+    //PUSER_INFO_0 userinfoArray = NULL;
+    //ULONG userinfoEntriesRead = 0;
+    //ULONG userinfoTotalEntries = 0;
+    //
+    //if (PhBeginInitOnce(&initOnce))
+    //{
+    //    PVOID baseAddress;
+    //
+    //    if (baseAddress = PhLoadLibrary(L"netapi32.dll"))
     //    {
-    //        for (i = 0; i < count; i++)
-    //        {
-    //            name = PhGetSidFullName(buffer[i].Sid, TRUE, &nameUse);
-    //            if (name)
-    //            {
-    //                if (nameUse == SidTypeUser)
-    //                    ComboBox_AddString(ComboBoxHandle, name->Buffer);
-    //                PhDereferenceObject(name);
-    //            }
-    //        }
-    //        LsaFreeMemory(buffer);
+    //        NetUserEnum_I = PhGetDllBaseProcedureAddress(baseAddress, "NetUserEnum", 0);
+    //        NetApiBufferFree_I = PhGetDllBaseProcedureAddress(baseAddress, "NetApiBufferFree", 0);
     //    }
     //
-    //    LsaClose(policyHandle);
+    //    PhEndInitOnce(&initOnce);
     //}
+    //
+    //if (!(NetUserEnum_I && NetApiBufferFree_I))
+    //    return STATUS_UNSUCCESSFUL;
+    //
+    //NetUserEnum_I(
+    //    NULL,
+    //    0,
+    //    FILTER_NORMAL_ACCOUNT,
+    //    &userinfoArray,
+    //    ULONG_MAX,
+    //    &userinfoEntriesRead,
+    //    &userinfoTotalEntries,
+    //    NULL
+    //    );
+    //
+    //if (userinfoArray)
+    //{
+    //    NetApiBufferFree_I(userinfoArray);
+    //    userinfoArray = NULL;
+    //}
+    //
+    //status = NetUserEnum_I(
+    //    NULL,
+    //    0,
+    //    FILTER_NORMAL_ACCOUNT,
+    //    &userinfoArray,
+    //    ULONG_MAX,
+    //    &userinfoEntriesRead,
+    //    &userinfoTotalEntries,
+    //    NULL
+    //    );
+    //
+    //if (status == ERROR_SUCCESS)
+    //{
+    //    for (ULONG i = 0; i < userinfoEntriesRead; i++)
+    //    {
+    //        PUSER_INFO_0 entry = PTR_ADD_OFFSET(userinfoArray, sizeof(USER_INFO_0) * i);
+    //
+    //        if (entry->usri0_name)
+    //        {
+    //            PH_STRINGREF string;
+    //
+    //            PhInitializeStringRefLongHint(&string, entry->usri0_name);
+    //
+    //            if (!NT_SUCCESS(Callback(&string, Context)))
+    //            {
+    //                break;
+    //            }
+    //        }
+    //    }
+    //}
+    //
+    //if (userinfoArray)
+    //    NetApiBufferFree_I(userinfoArray);
+
+    LSA_HANDLE policyHandle;
+    LSA_ENUMERATION_HANDLE enumerationContext = 0;
+    PLSA_ENUMERATION_INFORMATION buffer;
+    ULONG count;
+    ULONG i;
+    PPH_STRING name;
+    SID_NAME_USE nameUse;
+    
+    if (NT_SUCCESS(PhOpenLsaPolicy(&policyHandle, POLICY_VIEW_LOCAL_INFORMATION, NULL)))
+    {
+        while (NT_SUCCESS(LsaEnumerateAccounts(
+            policyHandle,
+            &enumerationContext,
+            &buffer,
+            0x100,
+            &count
+            )))
+        {
+            for (i = 0; i < count; i++)
+            {
+                name = PhGetSidFullName(buffer[i].Sid, TRUE, &nameUse);
+                if (name)
+                {
+                    if (nameUse == SidTypeUser)
+                    {
+                        if (!NT_SUCCESS(Callback(&name->sr, Context)))
+                        {
+                            break;
+                        }
+                    }
+                    PhDereferenceObject(name);
+                }
+            }
+            LsaFreeMemory(buffer);
+        }
+    
+        LsaClose(policyHandle);
+    }
 
     return STATUS_UNSUCCESSFUL;
 }
@@ -1448,24 +1448,13 @@ NTSTATUS PhCreateServiceSidToBuffer(
     _Inout_ PULONG ServiceSidLength
     )
 {
-    typedef NTSTATUS (NTAPI* _RtlCreateServiceSid)(
-        _In_ PUNICODE_STRING ServiceName,
-        _Out_writes_bytes_opt_(*ServiceSidLength) PSID ServiceSid,
-        _Inout_ PULONG ServiceSidLength
-        );
-    static _RtlCreateServiceSid RtlCreateServiceSid_I = NULL;
     UNICODE_STRING serviceName;
     NTSTATUS status;
 
-    if (!RtlCreateServiceSid_I)
-    {
-        if (!(RtlCreateServiceSid_I = PhGetDllProcedureAddress(L"ntdll.dll", "RtlCreateServiceSid", 0)))
-            return STATUS_PROCEDURE_NOT_FOUND;
-    }
+    if (!PhStringRefToUnicodeString(ServiceName, &serviceName))
+        return STATUS_NAME_TOO_LONG;
 
-    PhStringRefToUnicodeString(ServiceName, &serviceName);
-
-    status = RtlCreateServiceSid_I(
+    status = RtlCreateServiceSid(
         &serviceName,
         ServiceSid,
         ServiceSidLength

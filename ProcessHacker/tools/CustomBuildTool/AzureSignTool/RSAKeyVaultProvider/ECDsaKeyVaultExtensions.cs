@@ -1,4 +1,15 @@
-﻿namespace CustomBuildTool
+/*
+ * Copyright (c) 2022 Winsider Seminars & Solutions, Inc.  All rights reserved.
+ *
+ * This file is part of System Informer.
+ *
+ * Authors:
+ *
+ *     dmex
+ *
+ */
+
+namespace CustomBuildTool
 {
     /// <summary>
     /// Extensions for creating ECDsa from a Key Vault client.
@@ -14,14 +25,9 @@
         /// <returns></returns>
         public static ECDsa Create(TokenCredential credential, Uri keyId, JsonWebKey key)
         {
-            if (credential is null)
-                throw new ArgumentNullException(nameof(credential));
-
-            if (keyId is null)
-                throw new ArgumentNullException(nameof(keyId));
-
-            if (key is null)
-                throw new ArgumentNullException(nameof(key));
+            ArgumentNullException.ThrowIfNull(credential);
+            ArgumentNullException.ThrowIfNull(keyId);
+            ArgumentNullException.ThrowIfNull(key);
 
             return new ECDsaKeyVault(new KeyVaultContext(credential, keyId, key));
         }
@@ -35,14 +41,9 @@
         /// <returns></returns>
         public static ECDsa Create(TokenCredential credential, Uri keyId, X509Certificate2 publicCertificate)
         {
-            if (credential is null)
-                throw new ArgumentNullException(nameof(credential));
-
-            if (keyId is null)
-                throw new ArgumentNullException(nameof(keyId));
-
-            if (publicCertificate is null)
-                throw new ArgumentNullException(nameof(publicCertificate));
+            ArgumentNullException.ThrowIfNull(credential);
+            ArgumentNullException.ThrowIfNull(keyId);
+            ArgumentNullException.ThrowIfNull(publicCertificate);
 
             return new ECDsaKeyVault(new KeyVaultContext(credential, keyId, publicCertificate));
         }

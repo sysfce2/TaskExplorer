@@ -14,7 +14,7 @@
 #include <svcsup.h>
 #include <kphuser.h>
 
-static PH_STRINGREF KphDefaultPortName = PH_STRINGREF_INIT(KPH_PORT_NAME);
+static CONST PH_STRINGREF KphDefaultPortName = PH_STRINGREF_INIT(KPH_PORT_NAME);
 static PH_FREE_LIST KphMessageFreeList;
 
 VOID KphInitialize(
@@ -31,7 +31,7 @@ NTSTATUS KphConnect(
     NTSTATUS status;
     SC_HANDLE serviceHandle;
     BOOLEAN created = FALSE;
-    PPH_STRINGREF portName;
+    PCPH_STRINGREF portName;
 
     portName = (Config->PortName ? Config->PortName : &KphDefaultPortName);
 
@@ -56,11 +56,16 @@ NTSTATUS KphConnect(
 
     // Try to start the service, if it exists.
 
-    status = PhOpenService(&serviceHandle, SERVICE_START, PhGetStringRefZ(Config->ServiceName));
+    status = PhOpenService(&serviceHandle, SERVICE_START | SERVICE_QUERY_STATUS, PhGetStringRefZ(Config->ServiceName));
 
     if (NT_SUCCESS(status))
     {
         status = PhStartService(serviceHandle, 0, NULL);
+
+        if (NT_SUCCESS(status))
+        {
+            status = PhWaitForServiceStatus(serviceHandle, SERVICE_RUNNING, 5000);
+        }
 
         PhCloseServiceHandle(serviceHandle);
 
@@ -105,6 +110,11 @@ NTSTATUS KphConnect(
         goto CreateAndConnectEnd;
 
     status = PhStartService(serviceHandle, 0, NULL);
+
+    if (!NT_SUCCESS(status))
+        goto CreateAndConnectEnd;
+
+    status = PhWaitForServiceStatus(serviceHandle, SERVICE_RUNNING, 5000);
 
     if (!NT_SUCCESS(status))
         goto CreateAndConnectEnd;
@@ -336,9 +346,9 @@ VOID KphSetServiceSecurity(
 
     PhCreateSecurityDescriptor(securityDescriptor, SECURITY_DESCRIPTOR_REVISION);
     PhCreateAcl(dacl, sdAllocationLength - SECURITY_DESCRIPTOR_MIN_LENGTH, ACL_REVISION);
-    RtlAddAccessAllowedAce(dacl, ACL_REVISION, SERVICE_ALL_ACCESS, (PSID)&PhSeServiceSid);
-    RtlAddAccessAllowedAce(dacl, ACL_REVISION, SERVICE_ALL_ACCESS, administratorsSid);
-    RtlAddAccessAllowedAce(dacl, ACL_REVISION,
+    PhAddAccessAllowedAce(dacl, ACL_REVISION, SERVICE_ALL_ACCESS, (PSID)&PhSeServiceSid);
+    PhAddAccessAllowedAce(dacl, ACL_REVISION, SERVICE_ALL_ACCESS, administratorsSid);
+    PhAddAccessAllowedAce(dacl, ACL_REVISION,
         SERVICE_QUERY_CONFIG |
         SERVICE_QUERY_STATUS |
         SERVICE_START |
@@ -352,11 +362,13 @@ VOID KphSetServiceSecurity(
     PhSetServiceObjectSecurity(ServiceHandle, DACL_SECURITY_INFORMATION, securityDescriptor);
 
 #ifdef DEBUG
+    assert(RtlValidSecurityDescriptor(securityDescriptor));
     assert(sdAllocationLength < sizeof(securityDescriptorBuffer));
     assert(RtlLengthSecurityDescriptor(securityDescriptor) < sizeof(securityDescriptorBuffer));
 #endif
 }
 
+_Function_class_(PH_ENUM_KEY_CALLBACK)
 static BOOLEAN NTAPI KsiLoadUnloadServiceCleanupKeyCallback(
     _In_ HANDLE RootDirectory,
     _In_ PKEY_BASIC_INFORMATION Information,
@@ -391,8 +403,8 @@ NTSTATUS KsiLoadUnloadService(
     )
 {
 #ifdef _WIN64
-    static PH_STRINGREF fullServicesKeyName = PH_STRINGREF_INIT(L"\\Registry\\Machine\\System\\CurrentControlSet\\Services\\");
-    static PH_STRINGREF parametersKeyName = PH_STRINGREF_INIT(L"Parameters");
+    static CONST PH_STRINGREF fullServicesKeyName = PH_STRINGREF_INIT(L"\\Registry\\Machine\\System\\CurrentControlSet\\Services\\");
+    static CONST PH_STRINGREF parametersKeyName = PH_STRINGREF_INIT(L"Parameters");
     NTSTATUS status;
     PPH_STRING fullServiceKeyName;
     PPH_STRING fullServiceFileName;
@@ -2130,7 +2142,7 @@ NTSTATUS KphOpenDeviceDriver(
     msg->User.OpenDeviceDriver.DriverHandle = DriverHandle;
     status = KphCommsSendMessage(msg);
 
-    if (!NT_SUCCESS(status))
+    if (NT_SUCCESS(status))
     {
         status = msg->User.OpenDeviceDriver.Status;
     }
@@ -2157,12 +2169,11 @@ NTSTATUS KphOpenDeviceBaseDevice(
     msg->User.OpenDeviceBaseDevice.BaseDeviceHandle = BaseDeviceHandle;
     status = KphCommsSendMessage(msg);
 
-    if (!NT_SUCCESS(status))
+    if (NT_SUCCESS(status))
     {
-        status = msg->User.OpenDeviceDriver.Status;
+        status = msg->User.OpenDeviceBaseDevice.Status;
     }
 
     PhFreeToFreeList(&KphMessageFreeList, msg);
     return status;
-
 }

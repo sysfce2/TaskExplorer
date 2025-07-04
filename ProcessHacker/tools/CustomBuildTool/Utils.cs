@@ -24,32 +24,64 @@ namespace CustomBuildTool
         /// </summary>
         public static Dictionary<string, string> ParseArgs(string[] args)
         {
-            var dict = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            var dict = new Dictionary<string, string>(args.Length, StringComparer.OrdinalIgnoreCase);
             string argPending = null;
 
             foreach (string s in args)
             {
                 if (s.StartsWith("-", StringComparison.OrdinalIgnoreCase))
                 {
-                    dict.TryAdd(s, string.Empty);
-
+                    dict[s] = string.Empty;
                     argPending = s;
+                }
+                else if (!string.IsNullOrEmpty(argPending))
+                {
+                    dict[argPending] = s;
+                    argPending = null;
                 }
                 else
                 {
-                    if (argPending != null)
-                    {
-                        dict[argPending] = s;
-                        argPending = null;
-                    }
-                    else
-                    {
-                        dict.TryAdd(string.Empty, s);
-                    }
+                    dict[string.Empty] = s;
                 }
             }
 
             return dict;
+        }
+
+        /// <summary>
+        /// Splits a string into key-value pairs.
+        /// </summary>
+        public static Dictionary<string, string> ParseArguments(string[] args)
+        {
+            // 2. Track the current key (string) if it starts with "-".
+            // 3. For each string in args:
+            //    a. If it starts with "-", set as current key, add to dict if not present.
+            //    b. Else, if current key is set, append value to its list.
+            //    c. If no current key, ignore or add to a special key (optional).
+            // 4. Return the dictionary.
+
+            var kvp = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            var key = string.Empty;
+
+            foreach (string s in args)
+            {
+                if (s.StartsWith("-", StringComparison.OrdinalIgnoreCase))
+                {
+                    key = s;
+
+                    if (!kvp.ContainsKey(key))
+                    {
+                        kvp[key] = string.Empty;
+                    }
+                }
+                else if (!string.IsNullOrEmpty(key))
+                {
+                    kvp[key] += s;
+                }
+                // else: ignore values before any key
+            }
+
+            return kvp;
         }
 
         /// <summary>
@@ -67,7 +99,7 @@ namespace CustomBuildTool
             return dict;
         }
 
-        public static int ExecuteMsbuildCommand(string Command, BuildFlags Flags, out string OutputString)
+        public static int ExecuteMsbuildCommand(string Command, BuildFlags Flags, out string OutputString, bool RedirectOutput = true)
         {
             string file = GetMsbuildFilePath(Flags);
 
@@ -77,7 +109,7 @@ namespace CustomBuildTool
                 return 3; // file not found.
             }
 
-            return Win32.CreateProcess(file, Command, out OutputString, false);
+            return Win32.CreateProcess(file, Command, out OutputString, false, RedirectOutput);
         }
 
         public static string ExecuteVsWhereCommand(string Command)
@@ -90,9 +122,9 @@ namespace CustomBuildTool
                 return null;
             }
 
-            string output = Win32.ShellExecute(file, Command, false);
-            output = output.Trim();
-            return output;
+            int errorcode = Win32.CreateProcess(file, Command, out var outputString, false);
+
+            return outputString.Trim();
         }
 
         public static bool SetCurrentDirectoryParent(string FileName)
@@ -320,45 +352,25 @@ namespace CustomBuildTool
                 return null;
             }
 
-            string output = Win32.ShellExecute(currentGitPath, $"{currentGitDirectory} {Command}", false);
-            output = output.Trim();
-            return output;
+            int errorcode = Win32.CreateProcess(currentGitPath, $"{currentGitDirectory} {Command}", out var outputString, false);
+
+            return outputString.Trim();
         }
 
-        public static string GetWindowsSdkIncludePath()
+        public static List<string> EnumerateDirectory(string FilePath, string[] Extensions, string[] Exclude = null)
         {
-            List<KeyValuePair<Version, string>> versionList = new List<KeyValuePair<Version, string>>();
-            string kitsRoot = Win32.GetKeyValue(true, "Software\\Microsoft\\Windows Kits\\Installed Roots", "KitsRoot10", "%ProgramFiles(x86)%\\Windows Kits\\10\\");
-            string kitsPath = Utils.ExpandFullPath(Path.Join([kitsRoot, "\\Include"]));
-
-            if (Directory.Exists(kitsPath))
+            var list = Directory.EnumerateFiles(FilePath, "*", new EnumerationOptions
             {
-                var windowsKitsDirectory = Directory.EnumerateDirectories(kitsPath);
+                RecurseSubdirectories = true,
+                ReturnSpecialDirectories = false
+            }).Where(s => Extensions.Any(ext => string.Equals(ext, Path.GetExtension(s), StringComparison.OrdinalIgnoreCase))).ToList();
 
-                foreach (string path in windowsKitsDirectory)
-                {
-                    string name = Path.GetFileName(path);
-
-                    if (Version.TryParse(name, out var version))
-                    {
-                        versionList.Add(new KeyValuePair<Version, string>(version, path));
-                    }
-                }
-
-                versionList.Sort((first, second) => first.Key.CompareTo(second.Key));
-
-                if (versionList.Count > 0)
-                {
-                    var result = versionList[versionList.Count - 1];
-
-                    if (!string.IsNullOrWhiteSpace(result.Value))
-                    {
-                        return result.Value;
-                    }
-                }
+            if (Exclude != null)
+            {
+                list.RemoveAll(s => Exclude.Any(f => f.Equals(Path.GetFileName(s), StringComparison.OrdinalIgnoreCase)));
             }
 
-            return null;
+            return list;
         }
 
         public static string GetWindowsSdkPath()
@@ -507,9 +519,9 @@ namespace CustomBuildTool
                 return null;
             }
 
-            string output = Win32.ShellExecute(currentMisxPath, Command, false);
-            output = output.Trim();
-            return output;
+            int errorcode = Win32.CreateProcess(currentMisxPath, Command, out var outputString, false);
+
+            return outputString.Replace("\r\n\r\n", "\r\n", StringComparison.OrdinalIgnoreCase).Trim();
         }
 
         public static string GetSignToolPath()
@@ -556,7 +568,7 @@ namespace CustomBuildTool
         //    if (string.IsNullOrWhiteSpace(vswhere))
         //        return null;
         //
-        //    vswhereResult = Win32.ShellExecute(
+        //    vswhereResult = Win32.CreateProcess(
         //        vswhere,
         //        "-latest " +
         //        "-prerelease " +
@@ -725,6 +737,53 @@ namespace CustomBuildTool
 
             return fileTime;
         }
+
+        public static bool ValidateImageExports(string FileName)
+        {
+            LOADED_IMAGE loadedMappedImage = default;
+            IMAGE_EXPORT_DIRECTORY* exportDirectory;
+
+            try
+            {
+                if (!PInvoke.MapAndLoad(FileName, null, out loadedMappedImage, false, true))
+                    return false;
+
+                try
+                {
+                    exportDirectory = (IMAGE_EXPORT_DIRECTORY*)PInvoke.ImageDirectoryEntryToData(
+                        loadedMappedImage.MappedAddress, false,
+                        IMAGE_DIRECTORY_ENTRY.IMAGE_DIRECTORY_ENTRY_EXPORT, out uint DirectorySize
+                        );
+
+                    if (exportDirectory != null)
+                    {
+                        if (exportDirectory->NumberOfNames == 0)
+                            return true;
+
+                        Program.PrintColorMessage("Exported functions missing from module export definition file: ", ConsoleColor.Yellow);
+
+                        uint* exportNameTable = (uint*)PInvoke.ImageRvaToVa(loadedMappedImage.FileHeader, loadedMappedImage.MappedAddress, exportDirectory->AddressOfNames, null);
+
+                        for (uint i = 0; i < exportDirectory->NumberOfNames; i++)
+                        {
+                            var exportName = Marshal.PtrToStringUTF8((nint)PInvoke.ImageRvaToVa(loadedMappedImage.FileHeader, loadedMappedImage.MappedAddress, exportNameTable[i], null));
+
+                            Program.PrintColorMessage($"{i}: {exportName}", ConsoleColor.Yellow);
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Program.PrintColorMessage($"ValidateImageExports: {ex}", ConsoleColor.Red);
+                }
+            }
+            finally
+            {
+                PInvoke.UnMapAndLoad(ref loadedMappedImage);
+            }
+
+            return false;
+        }
     }
 
     public class BuildUpdateRequest
@@ -740,15 +799,10 @@ namespace CustomBuildTool
         [JsonPropertyName("bin_hash")] public string BinHash { get; init; }
         [JsonPropertyName("bin_sig")] public string BinSig { get; init; }
 
-        [JsonPropertyName("setup_url")] public string SetupUrl { get; init; }
-        [JsonPropertyName("setup_length")] public string SetupLength { get; init; }
-        [JsonPropertyName("setup_hash")] public string SetupHash { get; init; }
-        [JsonPropertyName("setup_sig")] public string SetupSig { get; init; }
-
-        [JsonPropertyName("release_bin_url")] public string ReleaseBinUrl { get; init; }
-        [JsonPropertyName("release_bin_length")] public string ReleaseBinLength { get; init; }
-        [JsonPropertyName("release_bin_hash")] public string ReleaseBinHash { get; init; }
-        [JsonPropertyName("release_bin_sig")] public string ReleaseBinSig { get; init; }
+        [JsonPropertyName("canary_setup_url")] public string CanarySetupUrl { get; init; }
+        [JsonPropertyName("canary_setup_length")] public string CanarySetupLength { get; init; }
+        [JsonPropertyName("canary_setup_hash")] public string CanarySetupHash { get; init; }
+        [JsonPropertyName("canary_setup_sig")] public string CanarySetupSig { get; init; }
 
         [JsonPropertyName("release_setup_url")] public string ReleaseSetupUrl { get; init; }
         [JsonPropertyName("release_setup_length")] public string ReleaseSetupLength { get; init; }
@@ -779,7 +833,7 @@ namespace CustomBuildTool
         [JsonPropertyName("upload_url")] public string UploadUrl { get; init; }
         [JsonPropertyName("html_url")] public string HtmlUrl { get; init; }
         [JsonPropertyName("assets")] public List<GithubAssetsResponse> Assets { get; init; }
-        [JsonIgnore] public string ReleaseId { get { return this.ID.ToString(); } }
+        [JsonIgnore] public string ReleaseId => this.ID.ToString();
 
         public override string ToString()
         {
@@ -794,15 +848,10 @@ namespace CustomBuildTool
         [JsonPropertyName("size")] public ulong Size { get; init; }
         [JsonPropertyName("state")] public string State { get; init; }
         [JsonPropertyName("browser_download_url")] public string DownloadUrl { get; init; }
+        [JsonPropertyName("digest")] public string Hash { get; init; }
 
         [JsonIgnore]
-        public bool Uploaded
-        {
-            get
-            {
-                return !string.IsNullOrWhiteSpace(this.State) && string.Equals(this.State, "uploaded", StringComparison.OrdinalIgnoreCase);
-            }
-        }
+        public bool Uploaded => string.Equals(this.State, "uploaded", StringComparison.OrdinalIgnoreCase);
 
         public override string ToString()
         {
@@ -1111,7 +1160,6 @@ namespace CustomBuildTool
     {
 
     }
-    
 
     public static class Extextensions
     {

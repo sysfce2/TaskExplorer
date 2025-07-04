@@ -1,29 +1,31 @@
-﻿namespace CustomBuildTool
+/*
+ * Copyright (c) 2022 Winsider Seminars & Solutions, Inc.  All rights reserved.
+ *
+ * This file is part of System Informer.
+ *
+ * Authors:
+ *
+ *     dmex
+ *
+ */
+
+namespace CustomBuildTool
 {
     /// <summary>
     /// A signing context used for signing packages with Azure Key Vault Keys.
     /// </summary>
     public readonly struct KeyVaultContext
     {
-        readonly CryptographyClient cryptographyClient;
+        private readonly CryptographyClient cryptographyClient;
 
         /// <summary>
         /// Creates a new Key Vault context.
         /// </summary>
         public KeyVaultContext(TokenCredential credential, Uri keyId, JsonWebKey key)
         {
-            if (credential is null)
-            {
-                throw new ArgumentNullException(nameof(credential));
-            }
-            if (keyId is null)
-            {
-                throw new ArgumentNullException(nameof(keyId));
-            }
-            if (key is null)
-            {
-                throw new ArgumentNullException(nameof(key));
-            }
+            ArgumentNullException.ThrowIfNull(credential);
+            ArgumentNullException.ThrowIfNull(keyId);
+            ArgumentNullException.ThrowIfNull(key);
 
             this.Certificate = null;
             this.KeyIdentifier = keyId;
@@ -36,18 +38,9 @@
         /// </summary>
         public KeyVaultContext(TokenCredential credential, Uri keyId, X509Certificate2 publicCertificate)
         {
-            if (credential is null)
-            {
-                throw new ArgumentNullException(nameof(credential));
-            }
-            if (keyId is null)
-            {
-                throw new ArgumentNullException(nameof(keyId));
-            }
-            if (publicCertificate is null)
-            {
-                throw new ArgumentNullException(nameof(publicCertificate));
-            }
+            ArgumentNullException.ThrowIfNull(credential);
+            ArgumentNullException.ThrowIfNull(keyId);
+            ArgumentNullException.ThrowIfNull(publicCertificate);
 
             this.Certificate = publicCertificate;
             this.KeyIdentifier = keyId;
@@ -82,7 +75,7 @@
         public X509Certificate2 Certificate { get; }
 
         /// <summary>
-        /// Identifyer of current key
+        /// Identifier of current key
         /// </summary>
         public Uri KeyIdentifier { get; }
 
@@ -108,17 +101,29 @@
             return sigResult.Signature;
         }
 
+        internal static EncryptionAlgorithm EncryptionPaddingToJwsAlgId(RSAEncryptionPadding padding)
+        {
+            return padding.Mode switch
+            {
+                RSAEncryptionPaddingMode.Pkcs1 => EncryptionAlgorithm.Rsa15,
+                RSAEncryptionPaddingMode.Oaep when padding.OaepHashAlgorithm == HashAlgorithmName.SHA1 => EncryptionAlgorithm.RsaOaep,
+                RSAEncryptionPaddingMode.Oaep when padding.OaepHashAlgorithm == HashAlgorithmName.SHA256 => EncryptionAlgorithm.RsaOaep256,
+                _ => throw new NotSupportedException("The padding specified is not supported.")
+            };
+        }
+
         internal byte[] DecryptData(byte[] cipherText, RSAEncryptionPadding padding)
         {
-            var algorithm = EncryptionPaddingTranslator.EncryptionPaddingToJwsAlgId(padding);
+            var algorithm = EncryptionPaddingToJwsAlgId(padding);
 
             var dataResult = cryptographyClient.Decrypt(algorithm, cipherText);
+
             return dataResult.Plaintext;
         }
 
 
         const int SHA1_SIZE = 20;
-        static readonly byte[] sha1Digest = [0x30, 0x21, 0x30, 0x09, 0x06, 0x05, 0x2B, 0x0E, 0x03, 0x02, 0x1A, 0x05, 0x00, 0x04, 0x14, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00];
+        private static readonly byte[] sha1Digest = [0x30, 0x21, 0x30, 0x09, 0x06, 0x05, 0x2B, 0x0E, 0x03, 0x02, 0x1A, 0x05, 0x00, 0x04, 0x14, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00];
 
         internal static byte[] CreateSha1Digest(byte[] hash)
         {

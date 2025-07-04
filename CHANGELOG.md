@@ -2,6 +2,18 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+
+
+## [1.6.5] - 2025-07-??
+
+### Changed
+- updated PHlib to version 3.2.25180.1655
+- switched to VS2022 toolset
+- updated Qt to 5.15.16
+
+
+
+
 ## [1.6.4] - 2025-05-04
 
 ### Fixed

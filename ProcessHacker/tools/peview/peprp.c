@@ -671,8 +671,8 @@ VERIFY_RESULT PvpVerifyFileWithAdditionalCatalog(
     _Out_opt_ PPH_STRING *SignerName
     )
 {
-    static PH_STRINGREF codeIntegrityFileName = PH_STRINGREF_INIT(L"\\AppxMetadata\\CodeIntegrity.cat");
-    static PH_STRINGREF windowsAppsPathSr = PH_STRINGREF_INIT(L"%ProgramFiles%\\WindowsApps\\");
+    static CONST PH_STRINGREF codeIntegrityFileName = PH_STRINGREF_INIT(L"\\AppxMetadata\\CodeIntegrity.cat");
+    static CONST PH_STRINGREF windowsAppsPathSr = PH_STRINGREF_INIT(L"%ProgramFiles%\\WindowsApps\\");
     NTSTATUS status;
     HANDLE fileHandle;
     VERIFY_RESULT result;
@@ -758,6 +758,7 @@ VERIFY_RESULT PvpVerifyFileWithAdditionalCatalog(
     return result;
 }
 
+_Function_class_(USER_THREAD_START_ROUTINE)
 static NTSTATUS VerifyImageThreadStart(
     _In_ PVOID Parameter
     )
@@ -1020,27 +1021,27 @@ VOID PvpSetPeImageSize(
 
     if (PvMappedImage.ViewSize != lastRawDataOffset)
     {
-        //BOOLEAN success = FALSE;
-        //PIMAGE_DATA_DIRECTORY dataDirectory;
-        //
-        //if (NT_SUCCESS(PhGetMappedImageDataDirectory(
-        //    &PvMappedImage,
-        //    IMAGE_DIRECTORY_ENTRY_SECURITY,
-        //    &dataDirectory
-        //    )))
-        //{
-        //    if ((lastRawDataOffset + dataDirectory->Size == PvMappedImage.Size) &&
-        //        (lastRawDataOffset == dataDirectory->VirtualAddress))
-        //    {
-        //        success = TRUE;
-        //    }
-        //}
-        //
-        //if (success)
-        //{
-        //    string = PhFormatSize(PvMappedImage.Size, ULONG_MAX);
-        //}
-        //else
+        BOOLEAN success = FALSE;
+        PIMAGE_DATA_DIRECTORY dataDirectory;
+        
+        if (NT_SUCCESS(PhGetMappedImageDataDirectory(
+            &PvMappedImage,
+            IMAGE_DIRECTORY_ENTRY_SECURITY,
+            &dataDirectory
+            )))
+        {
+            if ((lastRawDataOffset + dataDirectory->Size == PvMappedImage.ViewSize) &&
+                (lastRawDataOffset == dataDirectory->VirtualAddress))
+            {
+                success = TRUE;
+            }
+        }
+        
+        if (success)
+        {
+            string = PhFormatSize(PvMappedImage.ViewSize, ULONG_MAX);
+        }
+        else
         {
             WCHAR pointer[PH_PTR_STR_LEN_1];
 
@@ -1115,6 +1116,7 @@ typedef struct _PVP_ENTROPY_RESULT
     FLOAT ImageAvgMean;
 } PVP_ENTROPY_RESULT, *PPVP_ENTROPY_RESULT;
 
+_Function_class_(USER_THREAD_START_ROUTINE)
 static NTSTATUS PvpEntropyImageThreadStart(
     _In_ PVOID Parameter
     )
@@ -1145,6 +1147,7 @@ VOID PvpSetPeImageEntropy(
     PhQueueItemWorkQueue(PhGetGlobalWorkQueue(), PvpEntropyImageThreadStart, WindowHandle);
 }
 
+_Function_class_(USER_THREAD_START_ROUTINE)
 static NTSTATUS PvpEntryPointImageThreadStart(
     _In_ PVOID Parameter
     )
@@ -1249,7 +1252,7 @@ VOID PvpSetPeImageSpareHeaderBytes(
     {
         ULONG nativeHeadersLength = PtrToUlong(PTR_SUB_OFFSET(PvMappedImage.NtHeaders32, PvMappedImage.ViewBase));
         ULONG optionalHeadersLength = UFIELD_OFFSET(IMAGE_NT_HEADERS32, OptionalHeader) + PvMappedImage.NtHeaders32->FileHeader.SizeOfOptionalHeader;
-        ULONG sectionsLength = PvMappedImage.NtHeaders32->FileHeader.NumberOfSections * sizeof(IMAGE_SECTION_HEADER);
+        ULONG sectionsLength = PvMappedImage.NtHeaders32->FileHeader.NumberOfSections * IMAGE_SIZEOF_SECTION_HEADER;
         ULONG totalLength = nativeHeadersLength + optionalHeadersLength + sectionsLength;
         ULONG spareLength = PtrToUlong(PTR_SUB_OFFSET(PvMappedImage.NtHeaders32->OptionalHeader.SizeOfHeaders, totalLength));
 
@@ -1259,7 +1262,7 @@ VOID PvpSetPeImageSpareHeaderBytes(
     {
         ULONG nativeHeadersLength = PtrToUlong(PTR_SUB_OFFSET(PvMappedImage.NtHeaders, PvMappedImage.ViewBase));
         ULONG optionalHeadersLength = UFIELD_OFFSET(IMAGE_NT_HEADERS64, OptionalHeader) + PvMappedImage.NtHeaders->FileHeader.SizeOfOptionalHeader;
-        ULONG sectionsLength = PvMappedImage.NtHeaders->FileHeader.NumberOfSections * sizeof(IMAGE_SECTION_HEADER);
+        ULONG sectionsLength = PvMappedImage.NtHeaders->FileHeader.NumberOfSections * IMAGE_SIZEOF_SECTION_HEADER;
         ULONG totalLength = nativeHeadersLength + optionalHeadersLength + sectionsLength;
         ULONG spareLength = PtrToUlong(PTR_SUB_OFFSET(PvMappedImage.NtHeaders->OptionalHeader.SizeOfHeaders, totalLength));
 
@@ -1511,7 +1514,7 @@ VOID PvpSetPeImageFileProperties(
                 //if (basicInfo.FileAttributes & FILE_ATTRIBUTE_INTEGRITY_STREAM)
                 //    PhAppendStringBuilder2(&stringBuilder, L"Integiry, ");
                 //if (basicInfo.FileAttributes & FILE_ATTRIBUTE_VIRTUAL)
-                //    PhAppendStringBuilder2(&stringBuilder, L"Vitual, ");
+                //    PhAppendStringBuilder2(&stringBuilder, L"Virtual, ");
                 //if (basicInfo.FileAttributes & FILE_ATTRIBUTE_NO_SCRUB_DATA)
                 //    PhAppendStringBuilder2(&stringBuilder, L"No scrub, ");
                 //if (basicInfo.FileAttributes & FILE_ATTRIBUTE_EA)

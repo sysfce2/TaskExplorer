@@ -81,7 +81,7 @@ BOOLEAN PhGraphControlInitialization(
     wcex.lpfnWndProc = PhpGraphWndProc;
     wcex.cbClsExtra = 0;
     wcex.cbWndExtra = sizeof(PVOID);
-    wcex.hInstance = PhInstanceHandle;
+    wcex.hInstance = NtCurrentImageBase();
     wcex.hCursor = PhLoadCursor(NULL, IDC_ARROW);
     wcex.lpszClassName = PH_GRAPH_CLASSNAME;
 
@@ -629,8 +629,8 @@ VOID PhSetGraphText(
     textRectangle.Height = textSize.cy;
 
     // Save the rectangles.
-    DrawInfo->TextRect = PhRectangleToRect(textRectangle);
-    DrawInfo->TextBoxRect = PhRectangleToRect(boxRectangle);
+    PhRectangleToRect(&DrawInfo->TextRect, &textRectangle);
+    PhRectangleToRect(&DrawInfo->TextBoxRect, &boxRectangle);
 }
 
 PPHP_GRAPH_CONTEXT PhCreateGraphContext(
@@ -1312,7 +1312,6 @@ LRESULT CALLBACK PhpGraphWndProc(
                     NULL,
                     NULL
                     );
-
                 SetWindowPos(context->TooltipHandle, HWND_TOPMOST, 0, 0, 0, 0,
                     SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
 

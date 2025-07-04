@@ -1,4 +1,15 @@
-﻿namespace CustomBuildTool
+/*
+ * Copyright (c) 2022 Winsider Seminars & Solutions, Inc.  All rights reserved.
+ *
+ * This file is part of System Informer.
+ *
+ * Authors:
+ *
+ *     dmex
+ *
+ */
+
+namespace CustomBuildTool
 {
     /// <summary>
     /// Extensions for creating RSA objects from a Key Vault client.
@@ -14,20 +25,9 @@
         /// <returns></returns>
         public static RSA Create(TokenCredential credential, Uri keyId, JsonWebKey key)
         {
-            if (credential == null)
-            {
-                throw new ArgumentNullException(nameof(credential));
-            }
-
-            if (keyId == null)
-            {
-                throw new ArgumentNullException(nameof(keyId));
-            }
-
-            if (key == null)
-            {
-                throw new ArgumentNullException(nameof(key));
-            }
+            ArgumentNullException.ThrowIfNull(credential);
+            ArgumentNullException.ThrowIfNull(keyId);
+            ArgumentNullException.ThrowIfNull(key);
 
             return new RSAKeyVault(new KeyVaultContext(credential, keyId, key));
         }
@@ -41,20 +41,9 @@
         /// <returns></returns>
         public static RSA Create(TokenCredential credential, Uri keyId, X509Certificate2 publicCertificate)
         {
-            if (credential == null)
-            {
-                throw new ArgumentNullException(nameof(credential));
-            }
-
-            if (keyId == null)
-            {
-                throw new ArgumentNullException(nameof(keyId));
-            }
-
-            if (publicCertificate == null)
-            {
-                throw new ArgumentNullException(nameof(publicCertificate));
-            }
+            ArgumentNullException.ThrowIfNull(credential);
+            ArgumentNullException.ThrowIfNull(keyId);
+            ArgumentNullException.ThrowIfNull(publicCertificate);
 
             return new RSAKeyVault(new KeyVaultContext(credential, keyId, publicCertificate));
         }

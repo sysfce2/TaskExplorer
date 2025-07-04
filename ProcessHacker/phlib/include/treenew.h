@@ -13,9 +13,7 @@
 #ifndef _PH_TREENEW_H
 #define _PH_TREENEW_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+EXTERN_C_START
 
 #define PH_TREENEW_CLASSNAME L"PhTreeNew"
 
@@ -225,7 +223,7 @@ typedef enum _PH_TREENEW_MESSAGE
     TreeNewNodeExpanding, // PPH_TREENEW_NODE Parameter1, PPH_TREENEW_NODE_EVENT Parameter2
     TreeNewNodeSelecting, // PPH_TREENEW_NODE Parameter1
 
-    TreeNewSortChanged,
+    TreeNewSortChanged, // PH_TREENEW_SORT_CHANGED_EVENT Parameter1
     TreeNewSelectionChanged,
 
     TreeNewKeyDown, // PPH_TREENEW_KEY_EVENT Parameter1
@@ -250,13 +248,15 @@ typedef enum _PH_TREENEW_MESSAGE
     MaxTreeNewMessage
 } PH_TREENEW_MESSAGE;
 
-typedef BOOLEAN (NTAPI *PPH_TREENEW_CALLBACK)(
+typedef BOOLEAN _Function_class_(PH_TREENEW_CALLBACK)
+NTAPI PH_TREENEW_CALLBACK(
     _In_ HWND hwnd,
     _In_ PH_TREENEW_MESSAGE Message,
     _In_opt_ PVOID Parameter1,
     _In_opt_ PVOID Parameter2,
     _In_opt_ PVOID Context
     );
+typedef PH_TREENEW_CALLBACK* PPH_TREENEW_CALLBACK;
 
 typedef struct _PH_TREENEW_GET_CHILDREN
 {
@@ -343,6 +343,7 @@ typedef struct _PH_TREENEW_MOUSE_EVENT
 typedef struct _PH_TREENEW_KEY_EVENT
 {
     BOOLEAN Handled;
+    BOOLEAN Spare[3];
     ULONG VirtualKey;
     ULONG Data;
 } PH_TREENEW_KEY_EVENT, *PPH_TREENEW_KEY_EVENT;
@@ -356,6 +357,7 @@ typedef struct _PH_TREENEW_SORT_CHANGED_EVENT
 typedef struct _PH_TREENEW_NODE_EVENT
 {
     BOOLEAN Handled;
+    BOOLEAN Spare[3];
     ULONG Flags;
     PVOID Reserved1;
     PVOID Reserved2;
@@ -630,6 +632,7 @@ typedef struct _PH_TREENEW_VIEW_PARTS
     LONG FixedWidth;
     LONG NormalLeft;
     LONG NormalWidth;
+    ULONG64 ScrollTickCount;
 } PH_TREENEW_VIEW_PARTS, *PPH_TREENEW_VIEW_PARTS;
 
 PHLIBAPI
@@ -756,8 +759,6 @@ FORCEINLINE BOOLEAN PhAddTreeNewColumnEx2(
     return !!TreeNew_AddColumn(hwnd, &column);
 }
 
-#ifdef __cplusplus
-}
-#endif
+EXTERN_C_END
 
 #endif
