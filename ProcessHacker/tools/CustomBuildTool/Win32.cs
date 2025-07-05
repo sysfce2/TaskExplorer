@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright (c) 2022 Winsider Seminars & Solutions, Inc.  All rights reserved.
  *
  * This file is part of System Informer.
@@ -38,7 +38,7 @@ namespace CustomBuildTool
         /// <param name="OutputString">The output from the application</param>
         /// <param name="FixNewLines"></param>
         /// <returns>If the creation succeeds, the return value is nonzero.</returns>
-        public static int CreateProcess(string FileName, string Arguments, out string OutputString, bool FixNewLines = true)
+        public static int CreateProcess(string FileName, string Arguments, out string OutputString, bool FixNewLines = true, bool RedirectOutput = true)
         {
             int exitcode = int.MaxValue;
             StringBuilder output = new StringBuilder(0x1000);
@@ -51,17 +51,25 @@ namespace CustomBuildTool
                     process.StartInfo.FileName = FileName;
                     process.StartInfo.Arguments = Arguments;
                     process.StartInfo.UseShellExecute = false;
-                    process.StartInfo.RedirectStandardOutput = true;
-                    process.StartInfo.RedirectStandardError = true;
-                    process.StartInfo.StandardErrorEncoding = Utils.UTF8NoBOM;
-                    process.StartInfo.StandardOutputEncoding = Utils.UTF8NoBOM;
 
-                    process.OutputDataReceived += (_, e) => { output.AppendLine(e.Data); };
-                    process.ErrorDataReceived += (_, e) => { error.AppendLine(e.Data); };
+                    if (RedirectOutput)
+                    {
+                        process.StartInfo.RedirectStandardOutput = true;
+                        process.StartInfo.RedirectStandardError = true;
+                        process.StartInfo.StandardErrorEncoding = Utils.UTF8NoBOM;
+                        process.StartInfo.StandardOutputEncoding = Utils.UTF8NoBOM;
+                        process.OutputDataReceived += (_, e) => { output.AppendLine(e.Data); };
+                        process.ErrorDataReceived += (_, e) => { error.AppendLine(e.Data); };
+                    }
 
                     process.Start();
-                    process.BeginOutputReadLine();
-                    process.BeginErrorReadLine();
+
+                    if (RedirectOutput)
+                    {
+                        process.BeginOutputReadLine();
+                        process.BeginErrorReadLine();
+                    }
+
                     process.WaitForExit();
 
                     exitcode = process.ExitCode;
@@ -98,10 +106,7 @@ namespace CustomBuildTool
                 Share = FileShare.None
             };
 
-            using (FileStream file = new FileStream(FileName, options))
-            {
-                file.Close();
-            }
+            new FileStream(FileName, options).Dispose();
         }
 
         /// <summary>
@@ -115,13 +120,6 @@ namespace CustomBuildTool
 
             if (File.Exists(FileName))
                 File.Delete(FileName);
-        }
-
-        public static string ShellExecute(string FileName, string Arguments, bool FixNewLines = true)
-        {
-            CreateProcess(FileName, Arguments, out string outputstring, FixNewLines);
-
-            return outputstring;
         }
 
         /// <summary>
@@ -197,35 +195,21 @@ namespace CustomBuildTool
 
             if (File.Exists(DestinationFile))
             {
-                FileInfo sourceFile = new FileInfo(SourceFile);
-                FileInfo destinationFile = new FileInfo(DestinationFile);
+                GetFileTime(SourceFile, out var sourceCreationTime, out var sourceWriteTime);
+                GetFileTime(DestinationFile, out var destinationCreationTime, out var destinationWriteTime);
 
-                if (
-                    sourceFile.CreationTimeUtc > destinationFile.CreationTimeUtc ||
-                    sourceFile.LastWriteTimeUtc > destinationFile.LastWriteTimeUtc
-                    )
+                if (!(sourceCreationTime == destinationCreationTime && sourceWriteTime == destinationWriteTime))
                 {
                     File.Copy(SourceFile, DestinationFile, true);
-
-                    SetFileTime(
-                        DestinationFile,
-                        sourceFile.CreationTimeUtc.ToFileTimeUtc(),
-                        sourceFile.LastWriteTimeUtc.ToFileTimeUtc()
-                        );
+                    SetFileTime(DestinationFile, sourceCreationTime, sourceWriteTime);
                     updated = true;
                 }
             }
             else
             {
-                FileInfo sourceFile = new FileInfo(SourceFile);
-
+                GetFileTime(SourceFile, out var sourceCreationTime, out var sourceWriteTime);
                 File.Copy(SourceFile, DestinationFile, true);
-
-                SetFileTime(
-                    DestinationFile,
-                    sourceFile.CreationTimeUtc.ToFileTimeUtc(),
-                    sourceFile.LastWriteTimeUtc.ToFileTimeUtc()
-                    );
+                SetFileTime(DestinationFile, sourceCreationTime, sourceWriteTime);
                 updated = true;
             }
 
@@ -303,7 +287,16 @@ namespace CustomBuildTool
         {
             Value = Environment.GetEnvironmentVariable(Name, EnvironmentVariableTarget.Process);
 
-            return !string.IsNullOrWhiteSpace(Value);
+            if (string.IsNullOrWhiteSpace(Value))
+            {
+                if (Build.BuildToolsDebug)
+                {
+                    Program.PrintColorMessage($"EnvironmentVariable: {Name} not found.", ConsoleColor.Red);
+                }
+                return false;
+            }
+
+            return true;
         }
 
         /// <summary>
@@ -315,10 +308,18 @@ namespace CustomBuildTool
         public static bool GetEnvironmentVariableSpan(string Name, out ReadOnlySpan<char> Value)
         {
             var value = Environment.GetEnvironmentVariable(Name, EnvironmentVariableTarget.Process);
-
             Value = value.AsSpan();
 
-            return !Utils.IsSpanNullOrWhiteSpace(Value);
+            if (Utils.IsSpanNullOrWhiteSpace(Value))
+            {
+                if (Build.BuildToolsDebug)
+                {
+                    Program.PrintColorMessage($"EnvironmentVariable: {Name} not found.", ConsoleColor.Red);
+                }
+                return false;
+            }
+
+            return true;
         }
 
         /// <summary>
@@ -422,13 +423,7 @@ namespace CustomBuildTool
                 &sourceFile
                 ))
             {
-                NativeMethods.LARGE_INTEGER fileSize;
-
-                fileSize.QuadPart = 0;
-                fileSize.LowPart = sourceFile.nFileSizeLow;
-                fileSize.HighPart = sourceFile.nFileSizeHigh;
-
-                return fileSize.QuadPart;
+                return (ulong)sourceFile.nFileSizeHigh << 32 | (ulong)sourceFile.nFileSizeLow;
             }
 
             return 0;
@@ -465,8 +460,8 @@ namespace CustomBuildTool
 
         public static void SetFileTime(
             string FileName,
-            long CreationDateTime,
-            long LastWriteDateTime
+            DateTime CreationDateTime,
+            DateTime LastWriteDateTime
             )
         {
             FILE_BASIC_INFO basicInfo = new FILE_BASIC_INFO();
@@ -483,8 +478,8 @@ namespace CustomBuildTool
                 if (!PInvoke.GetFileInformationByHandleEx(fs.SafeFileHandle, FILE_INFO_BY_HANDLE_CLASS.FileBasicInfo, &basicInfo, (uint)sizeof(FILE_BASIC_INFO)))
                     throw new System.ComponentModel.Win32Exception(Marshal.GetLastWin32Error());
 
-                basicInfo.CreationTime = CreationDateTime == 0 ? DateTime.UtcNow.ToFileTimeUtc() : CreationDateTime;
-                basicInfo.LastWriteTime = LastWriteDateTime == 0 ? DateTime.UtcNow.ToFileTimeUtc() : LastWriteDateTime;
+                basicInfo.CreationTime = CreationDateTime == DateTime.MinValue ? DateTime.UtcNow.ToFileTimeUtc() : CreationDateTime.ToFileTimeUtc();
+                basicInfo.LastWriteTime = LastWriteDateTime == DateTime.MinValue ? DateTime.UtcNow.ToFileTimeUtc() : LastWriteDateTime.ToFileTimeUtc();
 
                 PInvoke.SetFileInformationByHandle(fs.SafeFileHandle, FILE_INFO_BY_HANDLE_CLASS.FileBasicInfo, &basicInfo, (uint)sizeof(FILE_BASIC_INFO));
             }
@@ -492,14 +487,14 @@ namespace CustomBuildTool
 
         public static void GetFileTime(
             string FileName,
-            out long CreationTime,
-            out long LastWriteDateTime
+            out DateTime CreationTime,
+            out DateTime LastWriteDateTime
             )
         {
             FILE_BASIC_INFO basicInfo = new FILE_BASIC_INFO();
 
-            CreationTime = 0;
-            LastWriteDateTime = 0;
+            CreationTime = DateTime.MinValue;
+            LastWriteDateTime = DateTime.MinValue;
 
             if (!File.Exists(FileName))
                 return;
@@ -509,8 +504,8 @@ namespace CustomBuildTool
                 if (!PInvoke.GetFileInformationByHandleEx(fs.SafeFileHandle, FILE_INFO_BY_HANDLE_CLASS.FileBasicInfo, &basicInfo, (uint)sizeof(FILE_BASIC_INFO)))
                     throw new System.ComponentModel.Win32Exception(Marshal.GetLastWin32Error());
 
-                CreationTime = basicInfo.CreationTime;
-                LastWriteDateTime = basicInfo.LastWriteTime;
+                CreationTime = DateTime.FromFileTimeUtc(basicInfo.CreationTime);
+                LastWriteDateTime = DateTime.FromFileTimeUtc(basicInfo.LastWriteTime);
             }
         }
     }

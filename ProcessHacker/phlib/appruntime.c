@@ -200,7 +200,6 @@ VOID PhDeleteWindowsRuntimeString(
 
     newRefCount = InterlockedDecrement(&string->ReferenceCount);
     ASSUME_ASSERT(newRefCount >= 0);
-    ASSUME_ASSERT(!(newRefCount < 0));
 
     if (newRefCount == 0)
     {
@@ -421,7 +420,7 @@ static PVOID PhDetoursPackageSystemIdentificationContext(
     )
 {
     static PH_INITONCE initOnce = PH_INITONCE_INIT;
-    static ULONG index = 0;
+    static ULONG index = TLS_OUT_OF_INDEXES;
 
     if (PhBeginInitOnce(&initOnce))
     {
@@ -726,6 +725,15 @@ CleanupExit:
     return status;
 }
 
+static NTSTATUS NTAPI PhEnumNextThreadSystemIdentification(
+    _In_ HANDLE ThreadHandle,
+    _Inout_ HANDLE* Context
+    )
+{
+    *Context = ThreadHandle;
+    return STATUS_NO_MORE_ENTRIES;
+}
+
 HRESULT PhGetProcessSystemIdentification(
     _In_ HANDLE ProcessId,
     _Out_ PPH_STRING* SystemIdForPublisher,
@@ -752,31 +760,42 @@ HRESULT PhGetProcessSystemIdentification(
         return HRESULT_FROM_NT(status);
     }
 
-    if (NT_SUCCESS(PhEnumProcesses(&processes)))
+    status = PhEnumNextThread(
+        processHandle,
+        NULL,
+        THREAD_QUERY_LIMITED_INFORMATION,
+        PhEnumNextThreadSystemIdentification,
+        &threadHandle
+        );
+
+    if (!NT_SUCCESS(status))
     {
-        PSYSTEM_PROCESS_INFORMATION process;
-
-        if (process = PhFindProcessInformation(processes, ProcessId))
+        if (NT_SUCCESS(PhEnumProcesses(&processes)))
         {
-            for (ULONG i = 0; i < process->NumberOfThreads; i++)
+            PSYSTEM_PROCESS_INFORMATION process;
+
+            if (process = PhFindProcessInformation(processes, ProcessId))
             {
-                HANDLE tempThreadHandle;
-
-                threadId = process->Threads[i].ClientId.UniqueThread;
-
-                if (NT_SUCCESS(PhOpenThread(
-                    &tempThreadHandle,
-                    THREAD_QUERY_LIMITED_INFORMATION,
-                    threadId
-                    )))
+                for (ULONG i = 0; i < process->NumberOfThreads; i++)
                 {
-                    threadHandle = tempThreadHandle;
-                    break;
+                    HANDLE tempThreadHandle;
+
+                    threadId = process->Threads[i].ClientId.UniqueThread;
+
+                    if (NT_SUCCESS(PhOpenThread(
+                        &tempThreadHandle,
+                        THREAD_QUERY_LIMITED_INFORMATION,
+                        threadId
+                        )))
+                    {
+                        threadHandle = tempThreadHandle;
+                        break;
+                    }
                 }
             }
-        }
 
-        PhFree(processes);
+            PhFree(processes);
+        }
     }
 
     if (!threadHandle)
@@ -896,9 +915,9 @@ DEFINE_GUID(IID_IAppInfo, 0xcf7f59b3, 0x6a09, 0x4de8, 0xa6, 0xc0, 0x57, 0x92, 0x
 // 4207a996-ca2f-42f7-bde8-8b10457a7f30
 DEFINE_GUID(IID_IStorageItem, 0x4207a996, 0xca2f, 0x42f7, 0xbd, 0xe8, 0x8b, 0x10, 0x45, 0x7a, 0x7f, 0x30);
 
-static _OpenPackageInfoByFullNameForUser OpenPackageInfoByFullNameForUser_I = NULL;
-static _GetPackageApplicationIds GetPackageApplicationIds_I = NULL;
-static _ClosePackageInfo ClosePackageInfo_I = NULL;
+static __typeof__(&OpenPackageInfoByFullNameForUser) OpenPackageInfoByFullNameForUser_I = NULL;
+static __typeof__(&GetPackageApplicationIds) GetPackageApplicationIds_I = NULL;
+static __typeof__(&ClosePackageInfo) ClosePackageInfo_I = NULL;
 
 static BOOLEAN PhPackageImportsInitialized(
     VOID

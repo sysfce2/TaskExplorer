@@ -2187,43 +2187,43 @@ bool CWindowsAPI::InitWindowsInfo()
 	if (WindowsVersion == WINDOWS_NEW)
 		m_SystemIcon = QPixmap::fromImage(QImage(":/WinLogos/WinNew"));
 	// Windows 2000
-	else if (PhOsVersion.dwMajorVersion == 5 && PhOsVersion.dwMinorVersion == 0)
+	else if (PhOsVersion.MajorVersion == 5 && PhOsVersion.MinorVersion == 0)
 		m_SystemIcon = QPixmap::fromImage(QImage(":/WinLogos/Win2k"));
 	// Windows XP, Windows Server 2003
-	else if (PhOsVersion.dwMajorVersion == 5 && PhOsVersion.dwMinorVersion > 0)
+	else if (PhOsVersion.MajorVersion == 5 && PhOsVersion.MinorVersion > 0)
 		m_SystemIcon = QPixmap::fromImage(QImage(":/WinLogos/WinXP"));
 	// Windows Vista, Windows Server 2008
-	else if (PhOsVersion.dwMajorVersion == 6 && PhOsVersion.dwMinorVersion == 0)
+	else if (PhOsVersion.MajorVersion == 6 && PhOsVersion.MinorVersion == 0)
 		m_SystemIcon = QPixmap::fromImage(QImage(":/WinLogos/Win6"));
     // Windows 7, Windows Server 2008 R2
-	else if (PhOsVersion.dwMajorVersion == 6 && PhOsVersion.dwMinorVersion == 1)
+	else if (PhOsVersion.MajorVersion == 6 && PhOsVersion.MinorVersion == 1)
 		m_SystemIcon = QPixmap::fromImage(QImage(":/WinLogos/Win7"));
     // Windows 8, Windows Server 2012
-	else if (PhOsVersion.dwMajorVersion == 6 && PhOsVersion.dwMinorVersion == 2)
+	else if (PhOsVersion.MajorVersion == 6 && PhOsVersion.MinorVersion == 2)
 		m_SystemIcon = QPixmap::fromImage(QImage(":/WinLogos/Win8"));
     // Windows 8.1, Windows Server 2012 R2
-	else if (PhOsVersion.dwMajorVersion == 6 && PhOsVersion.dwMinorVersion == 3)
+	else if (PhOsVersion.MajorVersion == 6 && PhOsVersion.MinorVersion == 3)
 		m_SystemIcon = QPixmap::fromImage(QImage(":/WinLogos/Win8"));
     // Windows 10, Windows Server 2016
-	else if (PhOsVersion.dwMajorVersion == 10 && PhOsVersion.dwMinorVersion == 0) {
-		if (PhOsVersion.dwBuildNumber < 22000) 
+	else if (PhOsVersion.MajorVersion == 10 && PhOsVersion.MinorVersion == 0) {
+		if (PhOsVersion.BuildNumber < 22000) 
 			m_SystemIcon = QPixmap::fromImage(QImage(":/WinLogos/Win10"));
 		else {
-			PhOsVersion.dwMajorVersion = 11;
+			PhOsVersion.MajorVersion = 11;
 			m_SystemIcon = QPixmap::fromImage(QImage(":/WinLogos/Win11"));
 		}
 	}
 	else
 		m_SystemIcon = QPixmap::fromImage(QImage(":/WinLogos/WinOld"));
 
-	if(PhOsVersion.dwMinorVersion)
-		m_SystemVersion = tr("Windows %1.%2").arg(PhOsVersion.dwMajorVersion).arg(PhOsVersion.dwMinorVersion);
+	if(PhOsVersion.MinorVersion)
+		m_SystemVersion = tr("Windows %1.%2").arg(PhOsVersion.MajorVersion).arg(PhOsVersion.MinorVersion);
 	else
-		m_SystemVersion = tr("Windows %1").arg(PhOsVersion.dwMajorVersion);
+		m_SystemVersion = tr("Windows %1").arg(PhOsVersion.MajorVersion);
 	if(!ReleaseId.isEmpty())
-		m_SystemBuild = tr("%1 (%2)").arg(ReleaseId).arg(PhOsVersion.dwBuildNumber);
+		m_SystemBuild = tr("%1 (%2)").arg(ReleaseId).arg(PhOsVersion.BuildNumber);
 	else
-		m_SystemBuild = tr("%1").arg(PhOsVersion.dwBuildNumber);
+		m_SystemBuild = tr("%1").arg(PhOsVersion.BuildNumber);
 
 	return true;
 }

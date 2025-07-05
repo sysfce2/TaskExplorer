@@ -30,7 +30,7 @@ AppUpdatesURL={#MyAppURL}
 
 AppCopyright={#MyAppCopyright}
 
-UninstallDisplayName=T{#MyAppName} {#MyAppVersion}
+UninstallDisplayName={#MyAppName} {#MyAppVersion}
 UninstallDisplayIcon={app}\x86\TaskExplorer.exe
 AppPublisher={#MyAppAuthor}
 

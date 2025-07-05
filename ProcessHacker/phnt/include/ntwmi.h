@@ -7,8 +7,6 @@
 #ifndef _NTWMI_H
 #define _NTWMI_H
 
-EXTERN_C_START
-
 #ifndef _TRACEHANDLE_DEFINED
 #define _TRACEHANDLE_DEFINED
 // Obsolete - prefer PROCESSTRACE_HANDLE or CONTROLTRACE_ID.
@@ -514,16 +512,16 @@ typedef struct _WMI_BUFFER_HEADER
 } WMI_BUFFER_HEADER, *PWMI_BUFFER_HEADER;
 
 static_assert(sizeof(WMI_BUFFER_HEADER) == 0x48, "WMI_BUFFER_HEADER must equal 0x48");
-C_ASSERT(FIELD_OFFSET(WMI_BUFFER_HEADER, BufferSize) == 0x0);
-C_ASSERT(FIELD_OFFSET(WMI_BUFFER_HEADER, SavedOffset) == 0x4);
-C_ASSERT(FIELD_OFFSET(WMI_BUFFER_HEADER, CurrentOffset) == 0x8);
-C_ASSERT(FIELD_OFFSET(WMI_BUFFER_HEADER, TimeStamp) == 0x10);
-C_ASSERT(FIELD_OFFSET(WMI_BUFFER_HEADER, SlistEntry) == 0x20);
-C_ASSERT(FIELD_OFFSET(WMI_BUFFER_HEADER, ClientContext) == 0x28);
-C_ASSERT(FIELD_OFFSET(WMI_BUFFER_HEADER, State) == 0x2c); // Compression
-C_ASSERT(FIELD_OFFSET(WMI_BUFFER_HEADER, Offset) == 0x30);
-C_ASSERT(FIELD_OFFSET(WMI_BUFFER_HEADER, BufferFlag) == 0x34);
-C_ASSERT(FIELD_OFFSET(WMI_BUFFER_HEADER, BufferType) == 0x36);
+static_assert(FIELD_OFFSET(WMI_BUFFER_HEADER, BufferSize) == 0x0);
+static_assert(FIELD_OFFSET(WMI_BUFFER_HEADER, SavedOffset) == 0x4);
+static_assert(FIELD_OFFSET(WMI_BUFFER_HEADER, CurrentOffset) == 0x8);
+static_assert(FIELD_OFFSET(WMI_BUFFER_HEADER, TimeStamp) == 0x10);
+static_assert(FIELD_OFFSET(WMI_BUFFER_HEADER, SlistEntry) == 0x20);
+static_assert(FIELD_OFFSET(WMI_BUFFER_HEADER, ClientContext) == 0x28);
+static_assert(FIELD_OFFSET(WMI_BUFFER_HEADER, State) == 0x2c); // Compression
+static_assert(FIELD_OFFSET(WMI_BUFFER_HEADER, Offset) == 0x30);
+static_assert(FIELD_OFFSET(WMI_BUFFER_HEADER, BufferFlag) == 0x34);
+static_assert(FIELD_OFFSET(WMI_BUFFER_HEADER, BufferType) == 0x36);
 
 typedef struct _TRACE_ENABLE_FLAG_EXTENSION
 {
@@ -593,6 +591,8 @@ typedef struct _PERFINFO_GROUPMASK
 
 #define PERF_GET_MASK_INDEX(GM) (((GM) & PERF_MASK_INDEX) >> 29)
 #define PERF_GET_MASK_GROUP(GM) ((GM) & PERF_MASK_GROUP)
+// rev
+#define PERF_GET_EVENT_TYPE(x) ((x) & 0xFF)
 
 #define PERFINFO_CLEAR_GROUPMASK(GroupMask) RtlZeroMemory((GroupMask), sizeof(PERFINFO_GROUPMASK))
 #define PERFINFO_OR_GROUP_WITH_GROUPMASK(Group, GroupMask) (GroupMask)->Masks[PERF_GET_MASK_INDEX(Group)] |= PERF_GET_MASK_GROUP(Group)
@@ -2156,7 +2156,7 @@ typedef struct _ETW_DISKIO_READWRITE_V2
     ULONG DiskNumber;
     ULONG IrpFlags;
     ULONG Size;
-    ULONG Reserved;
+    ULONG ResponseTime;
     ULONGLONG ByteOffset;
     PVOID FileObject;
     PVOID IrpAddress;
@@ -2168,12 +2168,12 @@ typedef struct _ETW_DISKIO_READWRITE_V3
     ULONG DiskNumber;
     ULONG IrpFlags;
     ULONG Size;
-    ULONG Reserved;
+    ULONG ResponseTime;
     ULONGLONG ByteOffset;
     PVOID FileObject;
     PVOID IrpAddress;
     ULONGLONG HighResResponseTime;
-    ULONG IssuingThreadId;
+    ULONG IssuingThreadId; // since WIN8
 } ETW_DISKIO_READWRITE_V3, *PETW_DISKIO_READWRITE_V3;
 
 typedef struct _ETW_DISKIO_FLUSH_BUFFERS_V2
@@ -2272,6 +2272,12 @@ typedef struct _WMI_FILE_IO
     PVOID FileObject;
     WCHAR FileName[1];
 } WMI_FILE_IO, *PWMI_FILE_IO;
+
+typedef struct _WMI_FILE_IO_WOW64
+{
+    ULONGLONG FileObject;
+    WCHAR FileName[1];
+} WMI_FILE_IO_WOW64, *PWMI_FILE_IO_WOW64;
 
 typedef struct _WMI_TCPIP_V4
 {
@@ -2669,6 +2675,7 @@ typedef struct _ETW_OBJECT_HANDLE_EVENT
     ULONG ProcessId;
     ULONG Handle;
     USHORT ObjectType;
+    WCHAR ObjectName[ANYSIZE_ARRAY];
 } ETW_OBJECT_HANDLE_EVENT, *PETW_OBJECT_HANDLE_EVENT;
 
 typedef struct _ETW_REFDEREF_OBJECT_EVENT
@@ -4579,7 +4586,7 @@ typedef enum _PERFINFO_KERNELMEMORY_USAGE_TYPE
     PerfInfoMemUsageMax
 } PERFINFO_KERNELMEMORY_USAGE_TYPE, *PPERFINFO_KERNELMEMORY_USAGE_TYPE;
 
-C_ASSERT(PerfInfoMemUsageMax <= (1 << PERFINFO_MM_KERNELMEMORY_USAGE_TYPE_BITS));
+static_assert(PerfInfoMemUsageMax <= (1 << PERFINFO_MM_KERNELMEMORY_USAGE_TYPE_BITS));
 
 typedef struct _PERFINFO_KERNELMEMORY_RANGE_USAGE
 {
@@ -4599,7 +4606,7 @@ typedef enum _PERFINFO_MM_STAT
     PerfInfoMMStatMax
 } PERFINFO_MM_STAT, *PPERFINFO_MM_STAT;
 
-C_ASSERT(PerfInfoMMStatMax <= (1 << PERFINFO_MM_STAT_TYPE_BITS));
+static_assert(PerfInfoMMStatMax <= (1 << PERFINFO_MM_STAT_TYPE_BITS));
 
 //
 // This is logged as part of the end rundown.
@@ -5116,17 +5123,17 @@ typedef struct _PERFINFO_DEBUG_EVENT
 //
 
 #define PERFINFO_CCSWAP_BIT_FULL_TS     30
-C_ASSERT (PERFINFO_CCSWAP_BIT_FULL_TS == (32 - PERFINFO_CCSWAP_BIT_TYPE));
+static_assert (PERFINFO_CCSWAP_BIT_FULL_TS == (32 - PERFINFO_CCSWAP_BIT_TYPE));
 
 #define PERFINFO_CCSWAP_BIT_SHORT_TS    14
-C_ASSERT(PERFINFO_CCSWAP_BIT_SHORT_TS == (16 - PERFINFO_CCSWAP_BIT_TYPE));
+static_assert(PERFINFO_CCSWAP_BIT_SHORT_TS == (16 - PERFINFO_CCSWAP_BIT_TYPE));
 
 #define PERFINFO_CCSWAP_BIT_SMALL_TS    17
-C_ASSERT (PERFINFO_CCSWAP_BIT_SMALL_TS ==
+static_assert(PERFINFO_CCSWAP_BIT_SMALL_TS ==
           (32 - PERFINFO_CCSWAP_BIT_TYPE - PERFINFO_CCSWAP_BIT_TID - PERFINFO_CCSWAP_BIT_PRI_INC - PERFINFO_CCSWAP_BIT_STATE_WR));
 
 #define PERFINFO_CCSWAP_BIT_WAIT_TIME   17
-C_ASSERT (PERFINFO_CCSWAP_BIT_WAIT_TIME ==
+static_assert(PERFINFO_CCSWAP_BIT_WAIT_TIME ==
           (32 - PERFINFO_CCSWAP_BIT_TID - PERFINFO_CCSWAP_BIT_STATE_WR - PERFINFO_CCSWAP_BIT_PRIORITY));
 
 //
@@ -5336,7 +5343,7 @@ typedef struct _PERFINFO_IO_TIMER
 #define TLG_KERNEL_PSPROV_KEYWORD_UTC       0x00000002
 
 //
-// Logger configuration and running statistics. This structure is used
+// Logger configuration and statistics.
 //
 
 typedef struct _WMI_LOGGER_INFORMATION
@@ -5349,66 +5356,86 @@ typedef struct _WMI_LOGGER_INFORMATION
     ULONG LogFileMode;                  // sequential, circular
     ULONG FlushTimer;                   // buffer flush timer, in seconds
     ULONG EnableFlags;                  // trace enable flags
+
     union
     {
-        LONG  AgeLimit;                 // aging decay time, in minutes
+        LONG AgeLimit;                  // aging decay time, in minutes
         LONG FlushThreshold;            // Number of buffers to fill before flushing
     } DUMMYUNIONNAME;
-    ULONG Wow;                          // TRUE if the logger started under WOW64
+
     union
     {
-        HANDLE  LogFileHandle;          // handle to logfile
-        ULONG64 LogFileHandle64;
+        struct
+        {
+            ULONG Wow : 1;              // TRUE if the logger started under WOW64
+            ULONG QpcDeltaTracking : 1;
+            ULONG LargeMdlPages : 1;
+            ULONG ExcludeKernelStack : 1;
+        };
+        ULONG64 V2Options;
     } DUMMYUNIONNAME2;
+
+    union
+    {
+        HANDLE  LogFileHandle;          // Handle to logfile
+        ULONG64 LogFileHandle64;
+    } DUMMYUNIONNAME3;
+
     union
     {
         ULONG NumberOfBuffers;          // no of buffers in use
         ULONG InstanceCount;            // Number of Provider Instances
-    } DUMMYUNIONNAME3;
+    } DUMMYUNIONNAME4;
+
     union
     {
         ULONG FreeBuffers;              // no of buffers free
         ULONG InstanceId;               // Current Provider's Id for UmLogger
-    } DUMMYUNIONNAME4;
+    } DUMMYUNIONNAME5;
+
     union
     {
         ULONG EventsLost;               // event records lost
         ULONG NumberOfProcessors;       // Passed on to UmLogger
-    } DUMMYUNIONNAME5;
+    } DUMMYUNIONNAME6;
+
     ULONG BuffersWritten;               // no of buffers written to file
+
     union
     {
         ULONG LogBuffersLost;           // no of logfile write failures
         ULONG Flags;                    // internal flags
-    } DUMMYUNIONNAME6;
+    } DUMMYUNIONNAME7;
 
     ULONG RealTimeBuffersLost;          // no of rt delivery failures
+
     union
     {
         HANDLE  LoggerThreadId;         // thread id of Logger
         ULONG64 LoggerThreadId64;       // thread is of Logger
-    } DUMMYUNIONNAME7;
+    } DUMMYUNIONNAME8;
+
     union
     {
         UNICODE_STRING LogFileName;     // used only in WIN64
         UNICODE_STRING64 LogFileName64; // Logfile name: only in WIN32
-    } DUMMYUNIONNAME8;
+    } DUMMYUNIONNAME9;
 
-    // mandatory data provided by caller
     union
     {
         UNICODE_STRING LoggerName;      // Logger instance name in WIN64
         UNICODE_STRING64 LoggerName64;  // Logger Instance name in WIN32
-    } DUMMYUNIONNAME9;
+    };
 
     ULONG RealTimeConsumerCount;        // Number of rt consumers
-    ULONG SpareUlong;
+
+    ULONG SequenceNumber;
 
     union
     {
         PVOID   LoggerExtension;
         ULONG64 LoggerExtension64;
-    } DUMMYUNIONNAME10;
+    };
 } WMI_LOGGER_INFORMATION, *PWMI_LOGGER_INFORMATION;
 
 #define ETW_SYSTEM_EVENT_VERSION_MASK        0x000000FF
@@ -5962,7 +5989,6 @@ typedef enum _ETWTRACECONTROLCODE
     EtwGetPmcSessions = 46,
 } ETWTRACECONTROLCODE;
 
-#if (PHNT_VERSION >= PHNT_VISTA)
 NTSYSCALLAPI
 NTSTATUS
 NTAPI
@@ -5974,9 +6000,7 @@ NtTraceControl(
     _In_ ULONG OutputBufferLength,
     _Out_ PULONG ReturnLength
     );
-#endif
 
-#if (PHNT_VERSION >= PHNT_WINXP)
 NTSYSCALLAPI
 NTSTATUS
 NTAPI
@@ -5986,18 +6010,17 @@ NtTraceEvent(
     _In_ ULONG FieldSize,
     _In_ PVOID Fields
     );
-#endif
 
 // private
 typedef struct _TELEMETRY_COVERAGE_POINT
 {
-    PWSTR Name;
+    PSTR Name;
     ULONG Hash;
     ULONG LastCoveredRound;
     ULONG Flags;
 } TELEMETRY_COVERAGE_POINT, *PTELEMETRY_COVERAGE_POINT;
 
-#if (PHNT_VERSION >= PHNT_REDSTONE3)
+#if (PHNT_VERSION >= PHNT_WINDOWS_10_RS3)
 // rev
 NTSYSAPI
 BOOLEAN
@@ -6155,7 +6178,6 @@ WmiSetSingleItemW(
     _In_reads_bytes_(ValueBufferSize) PVOID ValueBuffer
     );
 
-
 NTSYSAPI
 ULONG
 NTAPI
@@ -6187,15 +6209,15 @@ WmiExecuteMethodW(
 // Enable or disable a trace direct callback.
 // The callback is invoked immediately via a separate thread.
 #define NOTIFICATION_CALLBACK_DIRECT 0x00000004
-// Set this flag (and only this flag) when you want to only check if the 
+// Set this flag (and only this flag) when you want to only check if the
 // caller has permission to receive events for the guid.
 #define NOTIFICATION_CHECK_ACCESS 0x00000008
 // Enable lightweight notification.
 #define NOTIFICATION_LIGHTWEIGHT_FLAG 0x00000020
 
 // Event notification callback function prototype
-_Function_class_(NOTIFICATIONCALLBACK)
-typedef void (WINAPI NOTIFICATIONCALLBACK)(
+typedef _Function_class_(NOTIFICATIONCALLBACK) 
+VOID NTAPI NOTIFICATIONCALLBACK(
     _In_ PWNODE_HEADER Wnode,
     _In_ ULONG_PTR NotificationContext
     );
@@ -6390,7 +6412,5 @@ NTAPI
 WmiFreeBuffer(
     _In_ PVOID Buffer
     );
-
-EXTERN_C_END
 
 #endif

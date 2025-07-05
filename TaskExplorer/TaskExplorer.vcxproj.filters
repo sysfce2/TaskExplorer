@@ -1266,5 +1266,8 @@
     <QtTranslation Include="taskexplorer_it.ts">
       <Filter>Translation Files</Filter>
     </QtTranslation>
+    <QtTranslation Include="taskexplorer_tr.ts">
+      <Filter>Translation Files</Filter>
+    </QtTranslation>
   </ItemGroup>
 </Project>

@@ -168,7 +168,9 @@ typedef struct _REMOTE_PORT_VIEW64
     ULONGLONG ViewBase;
 } REMOTE_PORT_VIEW64, *PREMOTE_PORT_VIEW64;
 
+//
 // Port creation
+//
 
 NTSYSCALLAPI
 NTSTATUS
@@ -192,14 +194,16 @@ NtCreateWaitablePort(
     _In_opt_ ULONG MaxPoolUsage
     );
 
+//
 // Port connection (client)
+//
 
 NTSYSCALLAPI
 NTSTATUS
 NTAPI
 NtConnectPort(
     _Out_ PHANDLE PortHandle,
-    _In_ PUNICODE_STRING PortName,
+    _In_ PCUNICODE_STRING PortName,
     _In_ PSECURITY_QUALITY_OF_SERVICE SecurityQos,
     _Inout_opt_ PPORT_VIEW ClientView,
     _Inout_opt_ PREMOTE_PORT_VIEW ServerView,
@@ -213,7 +217,7 @@ NTSTATUS
 NTAPI
 NtSecureConnectPort(
     _Out_ PHANDLE PortHandle,
-    _In_ PUNICODE_STRING PortName,
+    _In_ PCUNICODE_STRING PortName,
     _In_ PSECURITY_QUALITY_OF_SERVICE SecurityQos,
     _Inout_opt_ PPORT_VIEW ClientView,
     _In_opt_ PSID RequiredServerSid,
@@ -223,7 +227,9 @@ NtSecureConnectPort(
     _Inout_opt_ PULONG ConnectionInformationLength
     );
 
+//
 // Port connection (server)
+//
 
 NTSYSCALLAPI
 NTSTATUS
@@ -252,7 +258,9 @@ NtCompleteConnectPort(
     _In_ HANDLE PortHandle
     );
 
+//
 // General
+//
 
 NTSYSCALLAPI
 NTSTATUS
@@ -357,7 +365,9 @@ NtQueryInformationPort(
     _Out_opt_ PULONG ReturnLength
     );
 
+//
 // Asynchronous Local Inter-process Communication
+//
 
 // rev
 typedef HANDLE ALPC_HANDLE, *PALPC_HANDLE;
@@ -646,9 +656,9 @@ typedef struct _ALPC_MESSAGE_HANDLE_INFORMATION
 
 // begin_private
 
-#if (PHNT_VERSION >= PHNT_VISTA)
-
+//
 // System calls
+//
 
 NTSYSCALLAPI
 NTSTATUS
@@ -801,7 +811,7 @@ NTSTATUS
 NTAPI
 NtAlpcConnectPort(
     _Out_ PHANDLE PortHandle,
-    _In_ PUNICODE_STRING PortName,
+    _In_ PCUNICODE_STRING PortName,
     _In_opt_ POBJECT_ATTRIBUTES ObjectAttributes,
     _In_opt_ PALPC_PORT_ATTRIBUTES PortAttributes,
     _In_ ULONG Flags,
@@ -813,7 +823,7 @@ NtAlpcConnectPort(
     _In_opt_ PLARGE_INTEGER Timeout
     );
 
-#if (PHNT_VERSION >= PHNT_WIN8)
+#if (PHNT_VERSION >= PHNT_WINDOWS_8)
 NTSYSCALLAPI
 NTSTATUS
 NTAPI
@@ -887,7 +897,7 @@ NtAlpcImpersonateClientOfPort(
     _In_ PVOID Flags
     );
 
-#if (PHNT_VERSION >= PHNT_THRESHOLD)
+#if (PHNT_VERSION >= PHNT_WINDOWS_10)
 NTSYSCALLAPI
 NTSTATUS
 NTAPI
@@ -922,7 +932,9 @@ NtAlpcOpenSenderThread(
     _In_ POBJECT_ATTRIBUTES ObjectAttributes
     );
 
+//
 // Support functions
+//
 
 NTSYSAPI
 ULONG
@@ -978,7 +990,6 @@ AlpcUnregisterCompletionList(
     _In_ HANDLE PortHandle
     );
 
-#if (PHNT_VERSION >= PHNT_WIN7)
 // rev
 NTSYSAPI
 NTSTATUS
@@ -986,7 +997,6 @@ NTAPI
 AlpcRundownCompletionList(
     _In_ HANDLE PortHandle
     );
-#endif
 
 NTSYSAPI
 NTSTATUS
@@ -1049,8 +1059,6 @@ AlpcGetCompletionListMessageAttributes(
     _In_ PVOID CompletionList,
     _In_ PPORT_MESSAGE Message
     );
-
-#endif
 
 // end_private
 

@@ -36,7 +36,7 @@ PPH_CREATE_OBJECT_HOOK PhDbgCreateObjectHook = NULL;
 /**
  * Initializes the object manager module.
  */
-BOOLEAN PhRefInitialization(
+NTSTATUS PhRefInitialization(
     VOID
     )
 {
@@ -71,9 +71,9 @@ BOOLEAN PhRefInitialization(
     PhpAutoPoolTlsIndex = PhTlsAlloc();
 
     if (PhpAutoPoolTlsIndex == TLS_OUT_OF_INDEXES)
-        return FALSE;
+        return STATUS_NO_MEMORY;
 
-    return TRUE;
+    return STATUS_SUCCESS;
 }
 
 /**
@@ -389,7 +389,7 @@ PPH_OBJECT_TYPE PhCreateObjectTypeEx(
     objectType->DeleteProcedure = DeleteProcedure;
     objectType->Name = Name;
 
-    assert(PhObjectTypeCount < PH_OBJECT_TYPE_TABLE_SIZE);
+    assert(InterlockedExchange(&PhObjectTypeCount, PhObjectTypeCount) < PH_OBJECT_TYPE_TABLE_SIZE);
 
     PhObjectTypeTable[objectType->TypeIndex] = objectType;
 

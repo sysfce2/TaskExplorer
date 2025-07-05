@@ -222,7 +222,7 @@ bool CWinToken::UpdateDynamicData(bool MonitorChange, bool IsOrWasRunning)
 
 	// Integrity
 	PH_INTEGRITY_LEVEL integrityLevel;
-	PPH_STRINGREF integrityString;
+	PCPH_STRINGREF integrityString;
 	if (NT_SUCCESS(PhGetTokenIntegrityLevelEx(tokenHandle, &integrityLevel, &integrityString)))
 	{
 		if (m_IntegrityLevel != integrityLevel.Level)
@@ -1112,7 +1112,7 @@ CWinToken::SContainerInfo CWinToken::GetContainerInfo()
         {
             for (ULONG i = 0; i < info->AttributeCount; i++)
             {
-                PTOKEN_SECURITY_ATTRIBUTE_V1 attribute = &info->Attribute.pAttributeV1[i];
+                PTOKEN_SECURITY_ATTRIBUTE_V1 attribute = &info->AttributeV1[i];
 
                 if (RtlEqualUnicodeString(&attribute->Name, &attributeNameUs, FALSE))
                 {
@@ -1382,31 +1382,31 @@ QVariant TokenSecurityAttribute2Variant(PTOKEN_SECURITY_ATTRIBUTE_V1 Attribute, 
     switch (Attribute->ValueType)
     {
     case TOKEN_SECURITY_ATTRIBUTE_TYPE_INT64:
-		return Attribute->Values.pInt64[ValueIndex];
+		return Attribute->Values.Int64[ValueIndex];
     case TOKEN_SECURITY_ATTRIBUTE_TYPE_UINT64:
-		return Attribute->Values.pUint64[ValueIndex];
+		return Attribute->Values.Uint64[ValueIndex];
     case TOKEN_SECURITY_ATTRIBUTE_TYPE_STRING:
-		return QString::fromWCharArray(Attribute->Values.pString[ValueIndex].Buffer, Attribute->Values.pString[ValueIndex].Length / sizeof(wchar_t));
+		return QString::fromWCharArray(Attribute->Values.String[ValueIndex].Buffer, Attribute->Values.String[ValueIndex].Length / sizeof(wchar_t));
     case TOKEN_SECURITY_ATTRIBUTE_TYPE_FQBN:
-		return CWinToken::tr("Version %1: %2").arg(Attribute->Values.pFqbn[ValueIndex].Version).arg(QString::fromWCharArray(Attribute->Values.pFqbn[ValueIndex].Name.Buffer, Attribute->Values.pFqbn[ValueIndex].Name.Length / sizeof(WCHAR)));
+		return CWinToken::tr("Version %1: %2").arg(Attribute->Values.Fqbn[ValueIndex].Version).arg(QString::fromWCharArray(Attribute->Values.Fqbn[ValueIndex].Name.Buffer, Attribute->Values.Fqbn[ValueIndex].Name.Length / sizeof(WCHAR)));
     case TOKEN_SECURITY_ATTRIBUTE_TYPE_SID:
         {
-            if (RtlValidSid(Attribute->Values.pOctetString[ValueIndex].Value))
+            if (RtlValidSid(Attribute->Values.OctetString[ValueIndex].Value))
             {
-                PPH_STRING name = PhGetSidFullName(Attribute->Values.pOctetString[ValueIndex].Value, TRUE, NULL); // note this may be slow
+                PPH_STRING name = PhGetSidFullName(Attribute->Values.OctetString[ValueIndex].Value, TRUE, NULL); // note this may be slow
                 if (name)
                     return CastPhString(name);
 
-                name = PhSidToStringSid(Attribute->Values.pOctetString[ValueIndex].Value);
+                name = PhSidToStringSid(Attribute->Values.OctetString[ValueIndex].Value);
                 if (name)
                     return CastPhString(name);
             }
         }
         return CWinToken::tr("(Invalid SID)");
     case TOKEN_SECURITY_ATTRIBUTE_TYPE_BOOLEAN:
-		return  Attribute->Values.pInt64[ValueIndex] != 0;
+		return  Attribute->Values.Int64[ValueIndex] != 0;
     case TOKEN_SECURITY_ATTRIBUTE_TYPE_OCTET_STRING:
-        return QByteArray((char*)Attribute->Values.pOctetString->Value, Attribute->Values.pOctetString->ValueLength).toHex();
+        return QByteArray((char*)Attribute->Values.OctetString->Value, Attribute->Values.OctetString->ValueLength).toHex();
     default:
         return CWinToken::tr("(Unknown)");
     }
@@ -1427,7 +1427,7 @@ QMap<QString, CWinToken::SAttribute> CWinToken::GetAttributes()
     {
         for (int i = 0; i < info->AttributeCount; i++)
         {
-            PTOKEN_SECURITY_ATTRIBUTE_V1 attribute = &info->Attribute.pAttributeV1[i];
+            PTOKEN_SECURITY_ATTRIBUTE_V1 attribute = &info->AttributeV1[i];
 			SAttribute &Attribute = Attributes[QString::fromWCharArray(attribute->Name.Buffer, attribute->Name.Length / sizeof(wchar_t))];
 			Attribute.Type = attribute->ValueType;
 			Attribute.Flags = attribute->Flags;

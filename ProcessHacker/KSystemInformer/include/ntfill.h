@@ -21,6 +21,8 @@ typedef struct _CLIENT_ID64
     ULONGLONG UniqueThread;
 } CLIENT_ID64, *PCLIENT_ID64;
 
+typedef const STRING32 *PCUNICODE_STRING32;
+
 // EX
 
 typedef struct _EX_FAST_REF
@@ -315,7 +317,7 @@ typedef struct _OBJECT_HEADER
     QUAD Body;
 } OBJECT_HEADER, *POBJECT_HEADER;
 
-#if (defined _M_X64) || (defined _M_ARM64)
+#if defined(_M_X64) || defined(_M_ARM64)
 C_ASSERT(FIELD_OFFSET(OBJECT_HEADER, Body) == 0x030);
 C_ASSERT(sizeof(OBJECT_HEADER) == 0x038);
 #else

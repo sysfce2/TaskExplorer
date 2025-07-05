@@ -49,7 +49,12 @@ void CWinHandleFinder::run()
 			if (ProcessHandle == NULL)
 			{
 				if (!NT_SUCCESS(PhOpenProcess(&ProcessHandle, PROCESS_QUERY_INFORMATION | PROCESS_DUP_HANDLE, (HANDLE)handle->UniqueProcessId)))
-					continue;
+				{
+					if (!NT_SUCCESS(PhOpenProcess(&ProcessHandle, PROCESS_QUERY_INFORMATION, (HANDLE)handle->UniqueProcessId)))
+					{
+						continue;
+					}
+				}
 			}
 
 			pWinHandle->InitStaticData(handle, 0); // no timestamp

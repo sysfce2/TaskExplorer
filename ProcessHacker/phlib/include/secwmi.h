@@ -14,22 +14,6 @@
 
 EXTERN_C_START
 
-// Import typedefs
-
-typedef ULONG (WINAPI* _PowerGetActiveScheme)(
-    _In_opt_ HKEY UserRootPowerKey,
-    _Out_ PGUID* ActivePolicyGuid
-    );
-
-typedef ULONG (WINAPI* _PowerSetActiveScheme)(
-    _In_opt_ HKEY UserRootPowerKey,
-    _In_ PGUID SchemeGuid
-    );
-
-typedef ULONG (WINAPI* _PowerRestoreDefaultPowerSchemes)(
-    VOID
-    );
-
 PHLIBAPI
 HRESULT
 NTAPI
@@ -45,6 +29,16 @@ PhCoSetProxyBlanket(
     );
 
 PHLIBAPI
+HRESULT
+NTAPI
+PhGetWbemClassObjectDependency(
+    _Out_ PVOID* WbemClassObjectDependency,
+    _In_ struct IWbemClassObject* WbemClassObject,
+    _In_ struct IWbemServices* WbemServices,
+    _In_ PCWSTR Name
+    );
+
+PHLIBAPI
 PPH_STRING
 NTAPI
 PhGetWbemClassObjectString(
@@ -52,10 +46,26 @@ PhGetWbemClassObjectString(
     _In_ PCWSTR Name
     );
 
+PHLIBAPI
+ULONG64
+NTAPI
+PhGetWbemClassObjectUlong64(
+    _In_ PVOID WbemClassObject,
+    _In_ PCWSTR Name
+    );
+
+PHLIBAPI
+PVOID
+NTAPI
+PhGetWbemClassObjectUlongPtr(
+    _In_ PVOID WbemClassObject,
+    _In_ PCWSTR Name
+    );
+
 #define PhStringRefToBSTR(String) \
     SysAllocStringLen((String)->Buffer, (UINT)(String)->Length / sizeof(WCHAR))
 #define PhStringZToBSTR(String) \
-    SysAllocStringLen((String), (UINT)sizeof(String) - sizeof(UNICODE_NULL) / sizeof(WCHAR))
+    SysAllocStringLen((String), (UINT)((sizeof(String) / sizeof(WCHAR)) - 1))
 
 // powrprof.h
 typedef enum _POWER_DATA_ACCESSOR POWER_DATA_ACCESSOR;
@@ -72,30 +82,6 @@ typedef ULONG (WINAPI* _PowerWriteSecurityDescriptor)(
     _In_ POWER_DATA_ACCESSOR AccessFlags,
     _In_ PGUID PowerGuid,
     _In_ PCWSTR StringSecurityDescriptor
-    );
-
-typedef BOOL (WINAPI* _WTSGetListenerSecurity)(
-    _In_opt_ HANDLE ServerHandle,
-    _In_opt_ PVOID Reserved1,
-    _In_opt_ ULONG Reserved2,
-    _In_ PWSTR ListenerName,
-    _In_ SECURITY_INFORMATION SecurityInformation,
-    _Out_opt_ PSECURITY_DESCRIPTOR SecurityDescriptor,
-    _In_ ULONG Length,
-    _Out_ PULONG LengthNeeded
-    );
-
-typedef BOOL (WINAPI* _WTSSetListenerSecurity)(
-    _In_opt_ HANDLE ServerHandle,
-    _In_opt_ PVOID Reserved1,
-    _In_opt_ ULONG Reserved2,
-    _In_ PWSTR ListenerName,
-    _In_ SECURITY_INFORMATION SecurityInformation,
-    _In_ PSECURITY_DESCRIPTOR SecurityDescriptor
-    );
-
-PVOID PhGetWbemProxImageBaseAddress(
-    VOID
     );
 
 // Power policy

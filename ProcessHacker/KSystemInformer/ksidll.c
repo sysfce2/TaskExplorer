@@ -14,7 +14,7 @@
 
 //
 // This library is intended to be an extension of core OS functionality which
-// enables drivers to preform operations within the system that would otherwise
+// enables drivers to perform operations within the system that would otherwise
 // be dangerous or impossible.
 //
 
@@ -144,7 +144,7 @@ VOID NTAPI KsipApcKernelRoutine(
     ObDereferenceObjectDeferDelete(driverObject);
 }
 
-VOID KsiInitializeApc(
+VOID KSIAPI KsiInitializeApc(
     _Out_ PKSI_KAPC Apc,
     _In_ PDRIVER_OBJECT DriverObject,
     _In_ PRKTHREAD Thread,
@@ -171,7 +171,7 @@ VOID KsiInitializeApc(
     Apc->InternalContext = NULL;
 }
 
-BOOLEAN KsiInsertQueueApc(
+BOOLEAN KSIAPI KsiInsertQueueApc(
     _Inout_ PKSI_KAPC Apc,
     _In_opt_ PVOID SystemArgument1,
     _In_opt_ PVOID SystemArgument2,
@@ -194,7 +194,7 @@ BOOLEAN KsiInsertQueueApc(
     return result;
 }
 
-NTSTATUS KsiRemoveQueueApc(
+NTSTATUS KSIAPI KsiRemoveQueueApc(
     _Inout_ PKSI_KAPC Apc
     )
 {
@@ -224,9 +224,14 @@ NTSTATUS KsiRemoveQueueApc(
 //
 // This is an extension of the work queue functionality in Windows to enable a
 // driver to be unloaded while there are outstanding queued work items on the
-// system with which reference it. This is an alternative to IoQueueWorkItem
-// which requires a device object. In comparison, this extension only relies on
-// a driver object.
+// system with which reference it.
+//
+// N.B. WORK_QUEUE_ITEM and IO_WORKITEM are not equivalent. WORK_QUEUE_ITEM does
+// not provide a mechanism to reference an object associated with the driver
+// that queued the work item. IO_WORKITEM does, but its implementation for work
+// scheduling and accounting differs. They are not interchangeable. Therefore,
+// this implementation adds support for associating a driver object with a
+// WORK_QUEUE_ITEM.
 //
 // N.B. While this library guarantees the driver will not be unmapped, it does
 // not prevent DriverUnload from being invoked. Drivers using this library may
@@ -256,7 +261,7 @@ VOID KsipWorkItemRoutine(
 }
 
 _IRQL_requires_max_(DISPATCH_LEVEL)
-VOID KsiInitializeWorkItem(
+VOID KSIAPI KsiInitializeWorkItem(
     _Out_ PKSI_WORK_QUEUE_ITEM WorkItem,
     _In_ PDRIVER_OBJECT DriverObject,
     _In_ PKSI_WORK_QUEUE_ROUTINE Routine,
@@ -272,7 +277,7 @@ VOID KsiInitializeWorkItem(
 }
 
 _IRQL_requires_max_(DISPATCH_LEVEL)
-VOID KsiQueueWorkItem(
+VOID KSIAPI KsiQueueWorkItem(
     _Inout_ PKSI_WORK_QUEUE_ITEM WorkItem,
     _In_ WORK_QUEUE_TYPE QueueType
     )
@@ -289,7 +294,7 @@ VOID KsiQueueWorkItem(
 
 _IRQL_requires_max_(PASSIVE_LEVEL)
 _Must_inspect_result_
-NTSTATUS KsiInitialize(
+NTSTATUS KSIAPI KsiInitialize(
     _In_ ULONG Version,
     _In_ PDRIVER_OBJECT DriverObject,
     _In_opt_ PVOID Reserved
@@ -307,7 +312,7 @@ NTSTATUS KsiInitialize(
 }
 
 _IRQL_requires_max_(PASSIVE_LEVEL)
-VOID KsiUninitialize(
+VOID KSIAPI KsiUninitialize(
     _In_ PDRIVER_OBJECT DriverObject,
     _In_ ULONG Reserved
     )

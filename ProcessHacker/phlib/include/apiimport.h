@@ -17,6 +17,8 @@
 //#include <shlwapi.h>
 #include <userenv.h>
 #include <ntuser.h>
+#include <xmllite.h>
+
 
 // ntdll
 
@@ -86,6 +88,31 @@ typedef NTSTATUS (NTAPI* _NtChangeProcessState)(
     _In_opt_ ULONG64 Reserved
     );
 
+typedef NTSTATUS (NTAPI* _NtCreateThreadStateChange)(
+    _Out_ PHANDLE ThreadStateChangeHandle,
+    _In_ ACCESS_MASK DesiredAccess,
+    _In_opt_ PCOBJECT_ATTRIBUTES ObjectAttributes,
+    _In_ HANDLE ThreadHandle,
+    _In_opt_ _Reserved_ ULONG Reserved
+    );
+
+typedef NTSTATUS (NTAPI* _NtChangeThreadState)(
+    _In_ HANDLE ThreadStateChangeHandle,
+    _In_ HANDLE ThreadHandle,
+    _In_ THREAD_STATE_CHANGE_TYPE StateChangeType,
+    _In_opt_ PVOID ExtendedInformation,
+    _In_opt_ SIZE_T ExtendedInformationLength,
+    _In_opt_ ULONG64 Reserved
+);
+
+typedef NTSTATUS (NTAPI* _NtCreateThreadStateChange)(
+    _Out_ PHANDLE ThreadStateChangeHandle,
+    _In_ ACCESS_MASK DesiredAccess,
+    _In_opt_ PCOBJECT_ATTRIBUTES ObjectAttributes,
+    _In_ HANDLE ThreadHandle,
+    _In_opt_ _Reserved_ ULONG Reserved
+    );
+
 #if (PHNT_VERSION >= PHNT_WIN11)
 typedef NTSTATUS (NTAPI* _NtCopyFileChunk)(
     _In_ HANDLE SourceHandle,
@@ -123,6 +150,27 @@ typedef NTSTATUS (NTAPI* _NtCompareObjects)(
 typedef NTSTATUS (NTAPI* _RtlDefaultNpAcl)(
     _Out_ PACL* Acl
     );
+
+typedef NTSTATUS (NTAPI* _RtlDelayExecution)(
+    _In_ BOOLEAN Alertable,
+    _In_opt_ PLARGE_INTEGER DelayInterval
+    );
+    
+typedef NTSTATUS (NTAPI* _RtlDeriveCapabilitySidsFromName)(
+    _Inout_ PUNICODE_STRING UnicodeString,
+    _Out_ PSID CapabilityGroupSid,
+    _Out_ PSID CapabilitySid
+    );
+    
+#if (PHNT_VERSION >= PHNT_WINDOWS_10_RS3)
+// rev
+typedef NTSTATUS (NTAPI* _RtlDosLongPathNameToNtPathName_U_WithStatus)(
+    _In_ PCWSTR DosFileName,
+    _Out_ PUNICODE_STRING NtFileName,
+    _Out_opt_ PWSTR *FilePart,
+    _Out_opt_ PRTL_RELATIVE_NAME_U RelativeName
+    );
+#endif // PHNT_VERSION >= PHNT_WINDOWS_10_RS3
 
 typedef NTSTATUS (NTAPI* _RtlGetTokenNamedObjectPath)(
     _In_ HANDLE Token,
@@ -217,12 +265,66 @@ typedef BOOL (WINAPI* _ConvertStringSecurityDescriptorToSecurityDescriptorW)(
     _Out_opt_ PULONG SecurityDescriptorSize
     );
 
+// Cfgmgr32
+
+typedef HRESULT (WINAPI* _DevGetObjects)(
+    _In_ DEV_OBJECT_TYPE ObjectType,
+    _In_ ULONG QueryFlags,
+    _In_ ULONG cRequestedProperties,
+    _In_reads_opt_(cRequestedProperties) const DEVPROPCOMPKEY *pRequestedProperties,
+    _In_ ULONG cFilterExpressionCount,
+    _In_reads_opt_(cFilterExpressionCount) const DEVPROP_FILTER_EXPRESSION *pFilter,
+    _Out_ PULONG pcObjectCount,
+    _Outptr_result_buffer_maybenull_(*pcObjectCount) const DEV_OBJECT **ppObjects);
+	
+typedef VOID (WINAPI* _DevFreeObjects)(
+    _In_ ULONG cObjectCount,
+    _In_reads_(cObjectCount) const DEV_OBJECT *pObjects);
+
+typedef HRESULT (WINAPI* _DevGetObjectProperties)(
+    _In_ DEV_OBJECT_TYPE ObjectType,
+    _In_ PCWSTR pszObjectId,
+    _In_ ULONG QueryFlags,
+    _In_ ULONG cRequestedProperties,
+    _In_reads_(cRequestedProperties) const DEVPROPCOMPKEY *pRequestedProperties,
+    _Out_ PULONG pcPropertyCount,
+    _Outptr_result_buffer_(*pcPropertyCount) const DEVPROPERTY **ppProperties);
+	
+	
+typedef VOID (WINAPI* _DevFreeObjectProperties)(
+    _In_ ULONG cPropertyCount,
+    _In_reads_(cPropertyCount) const DEVPROPERTY *pProperties);
+	
+typedef HRESULT (WINAPI* _DevCreateObjectQuery)(
+    _In_ DEV_OBJECT_TYPE ObjectType,
+    _In_ ULONG QueryFlags,
+    _In_ ULONG cRequestedProperties,
+    _In_reads_opt_(cRequestedProperties) const DEVPROPCOMPKEY *pRequestedProperties,
+    _In_ ULONG cFilterExpressionCount,
+    _In_reads_opt_(cFilterExpressionCount) const DEVPROP_FILTER_EXPRESSION *pFilter,
+    _In_ PDEV_QUERY_RESULT_CALLBACK pCallback,
+    _In_opt_ PVOID pContext,
+    _Out_ PHDEVQUERY phDevQuery);
+	
+	
+typedef VOID (WINAPI* _DevCloseObjectQuery)(
+    _In_ HDEVQUERY hDevQuery);
+
 // Shlwapi
 
 typedef HRESULT (WINAPI* _SHAutoComplete)(
     _In_ HWND hwndEdit,
     _In_ ULONG Flags
     );
+
+typedef HRESULT (WINAPI* _SHCreateStreamOnFileEx)(
+    _In_ LPCWSTR pszFile,
+    _In_ DWORD   grfMode,
+    _In_ DWORD   dwAttributes,
+    _In_ BOOL    fCreate,
+    _In_opt_ IStream *pstmTemplate,
+    _Out_ IStream **ppstm
+);
 
 typedef ULONG (WINAPI* _PssCaptureSnapshot)(
     _In_ HANDLE ProcessHandle,
@@ -321,6 +423,18 @@ typedef VOID (WINAPI* _UnsubscribeServiceChangeNotifications)(
     _In_ PSC_NOTIFICATION_REGISTRATION pSubscription
     );
 
+// Xmllite
+
+typedef HRESULT (STDAPICALLTYPE* _CreateXmlReader)(_In_ REFIID riid,
+    _Outptr_ void ** ppvObject,
+    _In_opt_ IMalloc * pMalloc);
+    
+typedef HRESULT (STDAPICALLTYPE* _CreateXmlWriter)(_In_ REFIID riid,
+    _Out_ void ** ppvObject,
+    _In_opt_ IMalloc * pMalloc);
+
+EXTERN_C_START
+
 #define PH_DECLARE_IMPORT(Name) _##Name NTAPI Name##_Import(VOID)
 
 // Ntdll
@@ -329,23 +443,24 @@ PH_DECLARE_IMPORT(NtQueryInformationEnlistment);
 PH_DECLARE_IMPORT(NtQueryInformationResourceManager);
 PH_DECLARE_IMPORT(NtQueryInformationTransaction);
 PH_DECLARE_IMPORT(NtQueryInformationTransactionManager);
-//PH_DECLARE_IMPORT(NtSetInformationVirtualMemory);
 PH_DECLARE_IMPORT(NtCreateProcessStateChange);
 PH_DECLARE_IMPORT(NtChangeProcessState);
+PH_DECLARE_IMPORT(NtCreateThreadStateChange);
+PH_DECLARE_IMPORT(NtChangeThreadState);
 PH_DECLARE_IMPORT(NtCopyFileChunk);
-PH_DECLARE_IMPORT(NtAllocateVirtualMemoryEx);
 PH_DECLARE_IMPORT(NtCompareObjects);
 
 PH_DECLARE_IMPORT(NtSetInformationVirtualMemory);
-PH_DECLARE_IMPORT(LdrControlFlowGuardEnforcedWithExportSuppression);
 PH_DECLARE_IMPORT(LdrSystemDllInitBlock);
 
 PH_DECLARE_IMPORT(RtlDefaultNpAcl);
+PH_DECLARE_IMPORT(RtlDelayExecution);
+PH_DECLARE_IMPORT(RtlDeriveCapabilitySidsFromName);
+PH_DECLARE_IMPORT(RtlDosLongPathNameToNtPathName_U_WithStatus);
 PH_DECLARE_IMPORT(RtlGetTokenNamedObjectPath);
 PH_DECLARE_IMPORT(RtlGetAppContainerNamedObjectPath);
 PH_DECLARE_IMPORT(RtlGetAppContainerSidType);
 PH_DECLARE_IMPORT(RtlGetAppContainerParent);
-PH_DECLARE_IMPORT(RtlDeriveCapabilitySidsFromName);
 
 PH_DECLARE_IMPORT(PssNtCaptureSnapshot);
 PH_DECLARE_IMPORT(PssNtQuerySnapshot);
@@ -358,13 +473,21 @@ PH_DECLARE_IMPORT(NtPssCaptureVaSpaceBulk);
 PH_DECLARE_IMPORT(ConvertSecurityDescriptorToStringSecurityDescriptorW);
 PH_DECLARE_IMPORT(ConvertStringSecurityDescriptorToSecurityDescriptorW);
 
+// Cfgmgr32
+
+PH_DECLARE_IMPORT(DevGetObjects);
+PH_DECLARE_IMPORT(DevFreeObjects);
+PH_DECLARE_IMPORT(DevGetObjectProperties);
+PH_DECLARE_IMPORT(DevFreeObjectProperties);
+PH_DECLARE_IMPORT(DevCreateObjectQuery);
+PH_DECLARE_IMPORT(DevCloseObjectQuery);
+
 // Shlwapi
 
 PH_DECLARE_IMPORT(SHAutoComplete);
+PH_DECLARE_IMPORT(SHCreateStreamOnFileEx);
 
-//PH_DECLARE_IMPORT(PssCaptureSnapshot);
-//PH_DECLARE_IMPORT(PssQuerySnapshot);
-//PH_DECLARE_IMPORT(PssFreeSnapshot);
+// Userenv
 
 PH_DECLARE_IMPORT(CreateEnvironmentBlock);
 PH_DECLARE_IMPORT(DestroyEnvironmentBlock);
@@ -373,7 +496,13 @@ PH_DECLARE_IMPORT(GetAppContainerFolderPath);
 
 // User32
 
-//PH_DECLARE_IMPORT(SetWindowDisplayAffinity);
 PH_DECLARE_IMPORT(ConsoleControl);
+
+// Xmllite
+
+PH_DECLARE_IMPORT(CreateXmlReader);
+PH_DECLARE_IMPORT(CreateXmlWriter);
+
+EXTERN_C_END
 
 #endif

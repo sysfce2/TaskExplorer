@@ -24,6 +24,12 @@ namespace CustomBuildTool
 
         public static bool EncryptFile(string FileName, string OutFileName, string Secret, string Salt)
         {
+            if (string.IsNullOrWhiteSpace(FileName) || string.IsNullOrWhiteSpace(OutFileName) || string.IsNullOrWhiteSpace(Secret) || string.IsNullOrWhiteSpace(Salt))
+            {
+                Program.PrintColorMessage($"Unable to encrypt file: Invalid arguments.", ConsoleColor.Yellow);
+                return false;
+            }
+
             try
             {
                 using (var fileStream = File.OpenRead(FileName))
@@ -44,6 +50,12 @@ namespace CustomBuildTool
 
         public static bool DecryptFile(string FileName, string OutFileName, string Secret, string Salt)
         {
+            if (string.IsNullOrWhiteSpace(FileName) || string.IsNullOrWhiteSpace(OutFileName) || string.IsNullOrWhiteSpace(Secret) || string.IsNullOrWhiteSpace(Salt))
+            {
+                Program.PrintColorMessage($"Unable to decrypt file: Invalid arguments.", ConsoleColor.Yellow);
+                return false;
+            }
+
             try
             {
                 using (var fileStream = File.OpenRead(FileName))
@@ -88,13 +100,11 @@ namespace CustomBuildTool
         {
             try
             {
-                using (var filetream = File.OpenRead(FileName))
-                using (var bufferedStream = new BufferedStream(filetream, 0x1000))
-                using (var sha = SHA256.Create())
+                using (var fileStream = File.OpenRead(FileName))
                 {
-                    byte[] checksum = sha.ComputeHash(bufferedStream);
+                    byte[] fileHash = SHA256.HashData(fileStream);
 
-                    return Convert.ToHexString(checksum);
+                    return Convert.ToHexString(fileHash);
                 }
             }
             catch (Exception e)
@@ -338,14 +348,25 @@ namespace CustomBuildTool
 
         private static string GetPath(string FileName)
         {
+            if (Win32.GetEnvironmentVariable("BUILD_DRM", out string value))
+            {
+                return Path.Join([value, "\\", FileName]);
+            }
+
+            // N.B. Local developers are instructed to put keys in this path.
             return Path.Join([Build.BuildWorkingFolder, "\\tools\\CustomSignTool\\Resources\\", FileName]);
         }
 
-        private static string GetSalt(string Salt)
+        private static string GetSalt(string KeyNameOrSalt)
         {
-            if (string.IsNullOrWhiteSpace(Salt))
-                return "e0U0RTY2RjU5LUNBRjItNEMzOS1BN0Y4LTQ2MDk3QjFDNDYxQn0=";
-            return Salt;
+            if (KeyName_Vars.TryGetValue(KeyNameOrSalt, out var vars) &&
+                Win32.GetEnvironmentVariable(vars.Value, out string salt))
+            {
+                return salt;
+            }
+
+            // Assume this is the salt itself...
+            return KeyNameOrSalt;
         }
 
         private static bool GetKeyMaterial(string KeyName, out byte[] KeyMaterial)
@@ -353,7 +374,7 @@ namespace CustomBuildTool
             if (Win32.GetEnvironmentVariable(KeyName_Vars[KeyName].Key, out string secret))
             {
                 byte[] bytes = Utils.ReadAllBytes(GetPath($"{KeyName}.s"));
-                KeyMaterial = Decrypt(bytes, secret, GetSalt(null));
+                KeyMaterial = Decrypt(bytes, secret, GetSalt(KeyName));
                 return true;
             }
             else if (File.Exists(GetPath($"{KeyName}.key")))

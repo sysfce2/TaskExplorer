@@ -27,8 +27,8 @@
  */
 PLDR_DATA_TABLE_ENTRY PhFindLoaderEntry(
     _In_opt_ PVOID DllBase,
-    _In_opt_ PPH_STRINGREF FullDllName,
-    _In_opt_ PPH_STRINGREF BaseDllName
+    _In_opt_ PCPH_STRINGREF FullDllName,
+    _In_opt_ PCPH_STRINGREF BaseDllName
     )
 {
     PLDR_DATA_TABLE_ENTRY result = NULL;
@@ -187,8 +187,8 @@ NtSuppressDebugMessage(
     // Note: The Visual Studio debugger on Windows 7/8 attempts to load symbols
     // for non-executable resources. The kernelbase BasepLoadLibraryAsDataFileInternal
     // function temporarily suppresses symbols while loading resources (both release and debug)
-    // as a QOL optimization but we only suppress debug messages for debug builds. This issue
-    // was fixed on Windows 10 with SEC_IMAGE_NO_EXECUTE and suppression is not required (dmex)
+    // as a QOL optimization but we only suppress debug messages for debug builds. This issue was fixed
+    // by Microsoft on Windows 10 and above with SEC_IMAGE_NO_EXECUTE and suppression is not required (dmex)
 
     if (WindowsVersion < WINDOWS_10)
     {
@@ -207,23 +207,13 @@ NTSTATUS PhLoadLibraryAsResource(
     )
 {
     NTSTATUS status;
-    OBJECT_ATTRIBUTES sectionAttributes;
     HANDLE sectionHandle;
     PVOID imageBaseAddress;
     SIZE_T imageBaseSize;
 
-    InitializeObjectAttributes(
-        &sectionAttributes,
-        NULL,
-        0,
-        NULL,
-        NULL
-        );
-
-    status = NtCreateSection(
+    status = PhCreateSection(
         &sectionHandle,
         SECTION_QUERY | SECTION_MAP_READ,
-        &sectionAttributes,
         NULL,
         PAGE_READONLY,
         WindowsVersion < WINDOWS_8 ? SEC_IMAGE : SEC_IMAGE_NO_EXECUTE,
@@ -238,11 +228,10 @@ NTSTATUS PhLoadLibraryAsResource(
 
     NtSuppressDebugMessage(TRUE);
 
-    status = NtMapViewOfSection(
+    status = PhMapViewOfSection(
         sectionHandle,
         NtCurrentProcess(),
         &imageBaseAddress,
-        0,
         0,
         NULL,
         &imageBaseSize,
@@ -273,7 +262,7 @@ NTSTATUS PhLoadLibraryAsResource(
 }
 
 NTSTATUS PhLoadLibraryAsImageResource(
-    _In_ PPH_STRINGREF FileName,
+    _In_ PCPH_STRINGREF FileName,
     _In_ BOOLEAN NativeFileName,
     _Out_opt_ PVOID *BaseAddress
     )
@@ -323,7 +312,7 @@ NTSTATUS PhFreeLibraryAsImageResource(
 
     NtSuppressDebugMessage(TRUE);
 
-    status = NtUnmapViewOfSection(
+    status = PhUnmapViewOfSection(
         NtCurrentProcess(),
         LDR_IMAGEMAPPING_TO_MAPPEDVIEW(BaseAddress)
         );
@@ -414,7 +403,7 @@ PVOID PhGetProcedureAddress(
 
     return procedureAddress;
 #else
-    return PhGetDllBaseProcedureAddress(DllHandle, ProcedureName, (USHORT)ProcedureNumber);
+    return PhGetDllBaseProcedureAddress(DllHandle, ProcedureName, ProcedureNumber);
 #endif
 }
 
@@ -430,12 +419,14 @@ static NTSTATUS NTAPI PhpGetProcedureAddressRemoteLimitedCallback(
     _In_ PVOID ImageBase,
     _In_ SIZE_T ImageSize,
     _In_ PPH_STRING FileName,
-    _In_ PPH_PROCEDURE_ADDRESS_REMOTE_CONTEXT Context
+    _In_opt_ PVOID Context
     )
 {
-    if (PhEqualString(FileName, Context->FileName, TRUE))
+    PPH_PROCEDURE_ADDRESS_REMOTE_CONTEXT context = (PPH_PROCEDURE_ADDRESS_REMOTE_CONTEXT)Context;
+
+    if (PhEqualString(FileName, context->FileName, TRUE))
     {
-        Context->DllBase = ImageBase;
+        context->DllBase = ImageBase;
         return STATUS_NO_MORE_ENTRIES;
     }
 
@@ -473,7 +464,7 @@ static BOOLEAN PhpGetProcedureAddressRemoteCallback(
  */
 NTSTATUS PhGetProcedureAddressRemote(
     _In_ HANDLE ProcessHandle,
-    _In_ PPH_STRINGREF FileName,
+    _In_ PCPH_STRINGREF FileName,
     _In_ PCSTR ProcedureName,
     _Out_ PVOID *ProcedureAddress,
     _Out_opt_ PVOID *DllBase
@@ -516,30 +507,11 @@ NTSTATUS PhGetProcedureAddressRemote(
     memset(&context, 0, sizeof(PH_PROCEDURE_ADDRESS_REMOTE_CONTEXT));
     context.FileName = fileName;
 
-    {
-        PPH_STRING remoteFileName;
-
-        if (NT_SUCCESS(PhGetProcessMappedFileName(ProcessHandle, mappedImage.ViewBase, &remoteFileName)))
-        {
-            if (PhEqualString(fileName, remoteFileName, FALSE))
-            {
-                context.DllBase = mappedImage.ViewBase;
-            }
-
-            PhDereferenceObject(remoteFileName);
-        }
-    }
-
-#if 0 // CAUTION: this is very very slow for large processes
-    if (!context.DllBase)
-    {
-        status = PhEnumProcessModulesLimited(
-            ProcessHandle, 
-            PhpGetProcedureAddressRemoteLimitedCallback,
-            &context
-            );
-    }
-#endif
+    status = PhEnumProcessModulesLimited(
+        ProcessHandle,
+        PhpGetProcedureAddressRemoteLimitedCallback,
+        &context
+        );
 
     if (!context.DllBase)
     {
@@ -690,8 +662,7 @@ CleanupExit:
  * and does not need to be allocated or deallocated. This function cannot be used when the
  * image will be unloaded since the validity of the address is tied to the lifetime of the image.
  */
-_Success_(return)
-BOOLEAN PhLoadResource(
+NTSTATUS PhLoadResource(
     _In_ PVOID DllBase,
     _In_ PCWSTR Name,
     _In_ PCWSTR Type,
@@ -699,27 +670,46 @@ BOOLEAN PhLoadResource(
     _Out_opt_ PVOID *ResourceBuffer
     )
 {
+    NTSTATUS status;
     LDR_RESOURCE_INFO resourceInfo;
-    PIMAGE_RESOURCE_DATA_ENTRY resourceData;
+    PIMAGE_RESOURCE_DATA_ENTRY resourceData = NULL;
+    PVOID resourceBuffer = NULL;
     ULONG resourceLength;
-    PVOID resourceBuffer;
 
     resourceInfo.Type = (ULONG_PTR)Type;
     resourceInfo.Name = (ULONG_PTR)Name;
     resourceInfo.Language = MAKELANGID(LANG_NEUTRAL, SUBLANG_NEUTRAL);
 
-    if (!NT_SUCCESS(LdrFindResource_U(DllBase, &resourceInfo, RESOURCE_DATA_LEVEL, &resourceData)))
-        return FALSE;
+    __try
+    {
+        status = LdrFindResource_U(DllBase, &resourceInfo, RESOURCE_DATA_LEVEL, &resourceData);
+    }
+    __except (EXCEPTION_EXECUTE_HANDLER)
+    {
+        status = GetExceptionCode();
+    }
 
-    if (!NT_SUCCESS(LdrAccessResource(DllBase, resourceData, &resourceBuffer, &resourceLength)))
-        return FALSE;
+    if (!NT_SUCCESS(status))
+        return status;
+
+    __try
+    {
+        status = LdrAccessResource(DllBase, resourceData, &resourceBuffer, &resourceLength);
+    }
+    __except (EXCEPTION_EXECUTE_HANDLER)
+    {
+        status = GetExceptionCode();
+    }
+
+    if (!NT_SUCCESS(status))
+        return status;
 
     if (ResourceLength)
         *ResourceLength = resourceLength;
     if (ResourceBuffer)
         *ResourceBuffer = resourceBuffer;
 
-    return TRUE;
+    return status;
 }
 
  /**
@@ -736,8 +726,7 @@ BOOLEAN PhLoadResource(
   * \remarks This function returns a copy of a resource from heap memory
   * and must be deallocated. Use this function when the image will be unloaded.
   */
-_Success_(return)
-BOOLEAN PhLoadResourceCopy(
+NTSTATUS PhLoadResourceCopy(
     _In_ PVOID DllBase,
     _In_ PCWSTR Name,
     _In_ PCWSTR Type,
@@ -745,18 +734,27 @@ BOOLEAN PhLoadResourceCopy(
     _Out_opt_ PVOID *ResourceBuffer
     )
 {
+    NTSTATUS status;
     ULONG resourceLength;
     PVOID resourceBuffer;
 
-    if (!PhLoadResource(DllBase, Name, Type, &resourceLength, &resourceBuffer))
-        return FALSE;
+    status = PhLoadResource(
+        DllBase,
+        Name,
+        Type,
+        &resourceLength,
+        &resourceBuffer
+        );
 
-    if (ResourceLength)
-        *ResourceLength = resourceLength;
-    if (ResourceBuffer)
-        *ResourceBuffer = PhAllocateCopy(resourceBuffer, resourceLength);
+    if (NT_SUCCESS(status))
+    {
+        if (ResourceLength)
+            *ResourceLength = resourceLength;
+        if (ResourceBuffer)
+            *ResourceBuffer = PhAllocateCopy(resourceBuffer, resourceLength);
+    }
 
-    return TRUE;
+    return status;
 }
 
 // rev from LoadString (dmex)
@@ -780,13 +778,13 @@ PPH_STRING PhLoadString(
     PVOID resourceBuffer;
     ULONG stringIndex;
 
-    if (!PhLoadResource(
+    if (!NT_SUCCESS(PhLoadResource(
         DllBase,
         MAKEINTRESOURCE(resourceId),
         RT_STRING,
         &resourceLength,
         &resourceBuffer
-        ))
+        )))
     {
         return NULL;
     }
@@ -820,7 +818,7 @@ PPH_STRING PhLoadString(
  * \param SourceString The indirect string from which the resource will be retrieved.
  */
 PPH_STRING PhLoadIndirectString(
-    _In_ PPH_STRINGREF SourceString
+    _In_ PCPH_STRINGREF SourceString
     )
 {
     PPH_STRING indirectString = NULL;
@@ -907,7 +905,7 @@ PPH_STRING PhGetDllFileName(
     PPH_STRING fileName;
     ULONG_PTR indexOfFileName;
 
-    RtlEnterCriticalSection(NtCurrentPeb()->LoaderLock);
+    PhAcquireLoaderLock();
 
     entry = PhFindLoaderEntry(DllBase, NULL, NULL);
 
@@ -916,7 +914,7 @@ PPH_STRING PhGetDllFileName(
     else
         fileName = NULL;
 
-    RtlLeaveCriticalSection(NtCurrentPeb()->LoaderLock);
+    PhReleaseLoaderLock();
 
     if (!fileName)
         return NULL;
@@ -940,7 +938,7 @@ PPH_STRING PhGetDllFileName(
 
 _Success_(return)
 BOOLEAN PhGetLoaderEntryData(
-    _In_ PPH_STRINGREF BaseDllName,
+    _In_ PCPH_STRINGREF BaseDllName,
     _Out_opt_ PVOID* DllBase,
     _Out_opt_ ULONG* SizeOfImage,
     _Out_opt_ PPH_STRING* FullName
@@ -949,7 +947,7 @@ BOOLEAN PhGetLoaderEntryData(
     BOOLEAN result = FALSE;
     PLDR_DATA_TABLE_ENTRY entry;
 
-    RtlEnterCriticalSection(NtCurrentPeb()->LoaderLock);
+    PhAcquireLoaderLock();
 
     entry = PhFindLoaderEntry(NULL, NULL, BaseDllName);
 
@@ -986,7 +984,7 @@ BOOLEAN PhGetLoaderEntryData(
         }
     }
 
-    RtlLeaveCriticalSection(NtCurrentPeb()->LoaderLock);
+    PhReleaseLoaderLock();
 
     return result;
 }
@@ -998,7 +996,7 @@ PVOID PhGetLoaderEntryAddressDllBase(
     PLDR_DATA_TABLE_ENTRY entry;
     PVOID baseAddress;
 
-    RtlEnterCriticalSection(NtCurrentPeb()->LoaderLock);
+    PhAcquireLoaderLock();
 
     entry = PhFindLoaderEntryAddress(Address);
 
@@ -1007,20 +1005,20 @@ PVOID PhGetLoaderEntryAddressDllBase(
     else
         baseAddress = NULL;
 
-    RtlLeaveCriticalSection(NtCurrentPeb()->LoaderLock);
+    PhReleaseLoaderLock();
 
     return baseAddress;
 }
 
 PVOID PhGetLoaderEntryDllBase(
-    _In_opt_ PPH_STRINGREF FullDllName,
-    _In_opt_ PPH_STRINGREF BaseDllName
+    _In_opt_ PCPH_STRINGREF FullDllName,
+    _In_opt_ PCPH_STRINGREF BaseDllName
     )
 {
     PLDR_DATA_TABLE_ENTRY entry;
     PVOID baseAddress;
 
-    RtlEnterCriticalSection(NtCurrentPeb()->LoaderLock);
+    PhAcquireLoaderLock();
 
     if (WindowsVersion >= WINDOWS_8 && !FullDllName && BaseDllName)
     {
@@ -1038,7 +1036,7 @@ PVOID PhGetLoaderEntryDllBase(
     else
         baseAddress = NULL;
 
-    RtlLeaveCriticalSection(NtCurrentPeb()->LoaderLock);
+    PhReleaseLoaderLock();
 
     return baseAddress;
 }
@@ -1049,10 +1047,25 @@ PVOID PhGetDllBaseProcedureAddress(
     _In_opt_ USHORT ProcedureNumber
     )
 {
+    static PH_INITONCE initOnce = PH_INITONCE_INIT;
+    static BOOLEAN exportSuppressionEnabled = FALSE;
     PVOID exportAddress;
     PIMAGE_NT_HEADERS imageNtHeader;
     PIMAGE_DATA_DIRECTORY dataDirectory;
     PIMAGE_EXPORT_DIRECTORY exportDirectory;
+    PROCESS_MITIGATION_POLICY_INFORMATION mitigation;
+
+    if (PhBeginInitOnce(&initOnce))
+    {
+        if ((WindowsVersion >= WINDOWS_10_RS2) &&
+            NT_SUCCESS(PhGetProcessMitigationPolicy(NtCurrentProcess(), ProcessControlFlowGuardPolicy, &mitigation)) &&
+            mitigation.ControlFlowGuardPolicy.EnableExportSuppression)
+        {
+            exportSuppressionEnabled = TRUE;
+        }
+
+        PhEndInitOnce(&initOnce);
+    }
 
     if (!NT_SUCCESS(PhGetLoaderEntryImageNtHeaders(DllBase, &imageNtHeader)))
         return NULL;
@@ -1075,30 +1088,11 @@ PVOID PhGetDllBaseProcedureAddress(
         ProcedureNumber
         );
 
-    if (
-        WindowsVersion >= WINDOWS_10 &&
-        LdrControlFlowGuardEnforcedWithExportSuppression_Import() &&
-        LdrControlFlowGuardEnforcedWithExportSuppression_Import()()
-        )
+    if (exportAddress && exportSuppressionEnabled)
     {
-        PIMAGE_LOAD_CONFIG_DIRECTORY configDirectory;
-
-        if (NT_SUCCESS(PhGetLoaderEntryImageDirectory(
-            DllBase,
-            imageNtHeader,
-            IMAGE_DIRECTORY_ENTRY_LOAD_CONFIG,
-            &dataDirectory,
-            &configDirectory,
-            NULL
-            )))
+        if (PhLoaderEntryImageExportSupressionPresent(DllBase, imageNtHeader))
         {
-            if (RTL_CONTAINS_FIELD(configDirectory, configDirectory->Size, GuardFlags))
-            {
-                if (BooleanFlagOn(configDirectory->GuardFlags, IMAGE_GUARD_CF_EXPORT_SUPPRESSION_INFO_PRESENT))
-                {
-                    PhLoaderEntryGrantSuppressedCall(exportAddress);
-                }
-            }
+            PhLoaderEntryGrantSuppressedCall(exportAddress);
         }
     }
 
@@ -1129,9 +1123,6 @@ PVOID PhGetDllProcedureAddress(
 
     if (!(baseAddress = PhGetLoaderEntryDllBase(NULL, &baseDllName)))
         return NULL;
-
-    //if (!(baseAddress = PhGetLoaderEntryDllBaseZ(DllName)))
-    //    return NULL;
 
     return PhGetDllBaseProcedureAddress(
         baseAddress,
@@ -1246,9 +1237,9 @@ NTSTATUS PhGetLoaderEntryImageVaToSection(
 
     section = IMAGE_FIRST_SECTION(ImageNtHeader);
 
-    for (ULONG i = 0; i < ImageNtHeader->FileHeader.NumberOfSections; i++)
+    for (USHORT i = 0; i < ImageNtHeader->FileHeader.NumberOfSections; i++)
     {
-        sectionHeader = PTR_ADD_OFFSET(section, UInt32x32To64(sizeof(IMAGE_SECTION_HEADER), i));
+        sectionHeader = PTR_ADD_OFFSET(section, UInt32x32To64(IMAGE_SIZEOF_SECTION_HEADER, i));
 
         if (
             ((ULONG_PTR)ImageDirectoryAddress >= (ULONG_PTR)PTR_ADD_OFFSET(BaseAddress, sectionHeader->VirtualAddress)) &&
@@ -1285,9 +1276,9 @@ NTSTATUS PhLoaderEntryImageRvaToSection(
 
     section = IMAGE_FIRST_SECTION(ImageNtHeader);
 
-    for (ULONG i = 0; i < ImageNtHeader->FileHeader.NumberOfSections; i++)
+    for (USHORT i = 0; i < ImageNtHeader->FileHeader.NumberOfSections; i++)
     {
-        sectionHeader = PTR_ADD_OFFSET(section, UInt32x32To64(sizeof(IMAGE_SECTION_HEADER), i));
+        sectionHeader = PTR_ADD_OFFSET(section, UInt32x32To64(IMAGE_SIZEOF_SECTION_HEADER, i));
 
         if (
             ((ULONG_PTR)Rva >= (ULONG_PTR)sectionHeader->VirtualAddress) &&
@@ -1347,16 +1338,43 @@ NTSTATUS PhLoaderEntryImageRvaToVa(
     return STATUS_SUCCESS;
 }
 
+BOOLEAN PhLoaderEntryImageExportSupressionPresent(
+    _In_ PVOID BaseAddress,
+    _In_ PIMAGE_NT_HEADERS ImageNtHeader
+    )
+{
+    PIMAGE_LOAD_CONFIG_DIRECTORY configDirectory;
+    PIMAGE_DATA_DIRECTORY dataDirectory;
+
+    if (NT_SUCCESS(PhGetLoaderEntryImageDirectory(
+        BaseAddress,
+        ImageNtHeader,
+        IMAGE_DIRECTORY_ENTRY_LOAD_CONFIG,
+        &dataDirectory,
+        &configDirectory,
+        NULL
+        )))
+    {
+        if (RTL_CONTAINS_FIELD(configDirectory, configDirectory->Size, GuardFlags))
+        {
+            if (BooleanFlagOn(configDirectory->GuardFlags, IMAGE_GUARD_CF_EXPORT_SUPPRESSION_INFO_PRESENT))
+            {
+                return TRUE;
+            }
+        }
+    }
+
+    return FALSE;
+}
+
 VOID PhLoaderEntryGrantSuppressedCall(
     _In_ PVOID ExportAddress
     )
 {
-    static BOOLEAN PhLoaderEntryCacheInitialized = FALSE;
     static PPH_HASHTABLE PhLoaderEntryCacheHashtable = NULL;
 
-    if (!PhLoaderEntryCacheInitialized)
+    if (!PhLoaderEntryCacheHashtable)
     {
-        PhLoaderEntryCacheInitialized = TRUE;
         PhLoaderEntryCacheHashtable = PhCreateSimpleHashtable(10);
     }
 
@@ -1497,13 +1515,13 @@ PVOID PhGetLoaderEntryImageExportFunction(
             {
                 CHAR libraryFunctionName[DOS_MAX_PATH_LENGTH] = "";
 
-                if (!PhConvertUtf16ToUtf8Buffer(
+                if (!NT_SUCCESS(PhConvertUtf16ToUtf8Buffer(
                     libraryFunctionName,
                     sizeof(libraryFunctionName),
                     NULL,
                     dllProcedureRef.Buffer,
                     dllProcedureRef.Length
-                    ))
+                    )))
                 {
                     return NULL;
                 }
@@ -1600,13 +1618,13 @@ PVOID PhGetDllBaseProcedureAddressWithHint(
                     {
                         CHAR libraryFunctionName[DOS_MAX_PATH_LENGTH] = "";
 
-                        if (!PhConvertUtf16ToUtf8Buffer(
+                        if (!NT_SUCCESS(PhConvertUtf16ToUtf8Buffer(
                             libraryFunctionName,
                             sizeof(libraryFunctionName),
                             NULL,
                             dllProcedureRef.Buffer,
                             dllProcedureRef.Length
-                            ))
+                            )))
                         {
                             return NULL;
                         }
@@ -1702,20 +1720,20 @@ NTSTATUS PhLoaderEntryDetourImportProcedure(
                 if (OriginalAddress)
                     *OriginalAddress = (PVOID)importThunk->u1.Function;
 
-                if (NT_SUCCESS(status = NtProtectVirtualMemory(
+                if (NT_SUCCESS(status = PhProtectVirtualMemory(
                     NtCurrentProcess(),
-                    &importThunkAddress,
-                    &importThunkSize,
+                    importThunkAddress,
+                    importThunkSize,
                     PAGE_READWRITE,
                     &importThunkProtect
                     )))
                 {
                     importThunk->u1.Function = (ULONG_PTR)FunctionAddress;
 
-                    NtProtectVirtualMemory(
+                    PhProtectVirtualMemory(
                         NtCurrentProcess(),
-                        &importThunkAddress,
-                        &importThunkSize,
+                        importThunkAddress,
+                        importThunkSize,
                         importThunkProtect,
                         &importThunkProtect
                         );
@@ -1875,7 +1893,7 @@ NTSTATUS PhLoaderEntrySnapImportDirectory(
 
     if (PhEqualBytesZ(importName, ImportDllName, FALSE))
     {
-        importBaseAddress = PhInstanceHandle;
+        importBaseAddress = NtCurrentImageBase();
     }
     else
     {
@@ -2039,10 +2057,10 @@ static NTSTATUS PhpFixupLoaderEntryImageImports(
     if (!NT_SUCCESS(status))
         goto CleanupExit;
 
-    status = NtProtectVirtualMemory(
+    status = PhProtectVirtualMemory(
         NtCurrentProcess(),
-        &importDirectorySectionAddress,
-        &importDirectorySectionSize,
+        importDirectorySectionAddress,
+        importDirectorySectionSize,
         PAGE_READWRITE,
         &importDirectoryProtect
         );
@@ -2120,10 +2138,10 @@ static NTSTATUS PhpFixupLoaderEntryImageImports(
     TpReleasePool(loaderThreadpool);
 #endif
 
-    status = NtProtectVirtualMemory(
+    status = PhProtectVirtualMemory(
         NtCurrentProcess(),
-        &importDirectorySectionAddress,
-        &importDirectorySectionSize,
+        importDirectorySectionAddress,
+        importDirectorySectionSize,
         importDirectoryProtect,
         &importDirectoryProtect
         );
@@ -2182,10 +2200,10 @@ static NTSTATUS PhpFixupLoaderEntryImageDelayImports(
     if (!NT_SUCCESS(status))
         goto CleanupExit;
 
-    status = NtProtectVirtualMemory(
+    status = PhProtectVirtualMemory(
         NtCurrentProcess(),
-        &importDirectorySectionAddress,
-        &importDirectorySectionSize,
+        importDirectorySectionAddress,
+        importDirectorySectionSize,
         PAGE_READWRITE,
         &importDirectoryProtect
         );
@@ -2211,7 +2229,7 @@ static NTSTATUS PhpFixupLoaderEntryImageDelayImports(
         {
             if (PhEqualBytesZ(importName, "SystemInformer.exe", FALSE))
             {
-                importBaseAddress = PhInstanceHandle;
+                importBaseAddress = NtCurrentImageBase();
                 status = STATUS_SUCCESS;
             }
             else if (ReadPointerAcquire(importHandle))
@@ -2273,10 +2291,10 @@ static NTSTATUS PhpFixupLoaderEntryImageDelayImports(
     if (!NT_SUCCESS(status))
         goto CleanupExit;
 
-    status = NtProtectVirtualMemory(
+    status = PhProtectVirtualMemory(
         NtCurrentProcess(),
-        &importDirectorySectionAddress,
-        &importDirectorySectionSize,
+        importDirectorySectionAddress,
+        importDirectorySectionSize,
         importDirectoryProtect,
         &importDirectoryProtect
         );
@@ -2294,19 +2312,17 @@ CleanupExit:
     return status;
 }
 
-NTSTATUS PhpLoaderEntryQuerySectionInformation(
+NTSTATUS PhLoaderEntryIsSectionImageExecutable(
     _In_ HANDLE SectionHandle
     )
 {
-    SECTION_IMAGE_INFORMATION section;
     NTSTATUS status;
-
-    memset(&section, 0, sizeof(SECTION_IMAGE_INFORMATION));
+    SECTION_IMAGE_INFORMATION sectionInfo;
 
     status = NtQuerySection(
         SectionHandle,
         SectionImageInformation,
-        &section,
+        &sectionInfo,
         sizeof(SECTION_IMAGE_INFORMATION),
         NULL
         );
@@ -2314,20 +2330,20 @@ NTSTATUS PhpLoaderEntryQuerySectionInformation(
     if (!NT_SUCCESS(status))
         return status;
 
-    if (section.SubSystemType != IMAGE_SUBSYSTEM_WINDOWS_GUI)
+    if (sectionInfo.SubSystemType != IMAGE_SUBSYSTEM_WINDOWS_GUI)
         return STATUS_INVALID_IMPORT_OF_NON_DLL;
-    if (!FlagOn(section.ImageCharacteristics, IMAGE_FILE_DLL | IMAGE_FILE_EXECUTABLE_IMAGE))
+    if (!FlagOn(sectionInfo.ImageCharacteristics, IMAGE_FILE_DLL | IMAGE_FILE_EXECUTABLE_IMAGE))
         return STATUS_INVALID_IMPORT_OF_NON_DLL;
 
 #ifdef _WIN64
-    if (section.Machine != IMAGE_FILE_MACHINE_AMD64 && section.Machine != IMAGE_FILE_MACHINE_ARM64)
+    if (sectionInfo.Machine != IMAGE_FILE_MACHINE_AMD64 && sectionInfo.Machine != IMAGE_FILE_MACHINE_ARM64)
         return STATUS_IMAGE_MACHINE_TYPE_MISMATCH;
 #else
-    if (section.Machine != IMAGE_FILE_MACHINE_I386)
+    if (sectionInfo.Machine != IMAGE_FILE_MACHINE_I386)
         return STATUS_IMAGE_MACHINE_TYPE_MISMATCH;
 #endif
 
-    return status;
+    return STATUS_SUCCESS;
 }
 
 NTSTATUS PhLoaderEntryRelocateImage(
@@ -2363,21 +2379,21 @@ NTSTATUS PhLoaderEntryRelocateImage(
     if (FlagOn(imageNtHeader->FileHeader.Characteristics, IMAGE_FILE_RELOCS_STRIPPED))
         return STATUS_SUCCESS;
 
-    for (ULONG i = 0; i < imageNtHeader->FileHeader.NumberOfSections; i++)
+    for (USHORT i = 0; i < imageNtHeader->FileHeader.NumberOfSections; i++)
     {
         PIMAGE_SECTION_HEADER sectionHeader;
         PVOID sectionHeaderAddress;
         SIZE_T sectionHeaderSize;
         ULONG sectionProtectionJunk = 0;
 
-        sectionHeader = PTR_ADD_OFFSET(IMAGE_FIRST_SECTION(imageNtHeader), UInt32x32To64(sizeof(IMAGE_SECTION_HEADER), i));
+        sectionHeader = PTR_ADD_OFFSET(IMAGE_FIRST_SECTION(imageNtHeader), UInt32x32To64(IMAGE_SIZEOF_SECTION_HEADER, i));
         sectionHeaderAddress = PTR_ADD_OFFSET(BaseAddress, sectionHeader->VirtualAddress);
         sectionHeaderSize = sectionHeader->SizeOfRawData;
 
-        status = NtProtectVirtualMemory(
+        status = PhProtectVirtualMemory(
             NtCurrentProcess(),
-            &sectionHeaderAddress,
-            &sectionHeaderSize,
+            sectionHeaderAddress,
+            sectionHeaderSize,
             PAGE_READWRITE,
             &sectionProtectionJunk
             );
@@ -2421,7 +2437,7 @@ NTSTATUS PhLoaderEntryRelocateImage(
         relocationDirectory = PTR_ADD_OFFSET(relocationDirectory, relocationDirectory->SizeOfBlock);
     }
 
-    for (ULONG i = 0; i < imageNtHeader->FileHeader.NumberOfSections; i++)
+    for (USHORT i = 0; i < imageNtHeader->FileHeader.NumberOfSections; i++)
     {
         PIMAGE_SECTION_HEADER sectionHeader;
         PVOID sectionHeaderAddress;
@@ -2429,7 +2445,7 @@ NTSTATUS PhLoaderEntryRelocateImage(
         ULONG sectionProtection = 0;
         ULONG sectionProtectionJunk = 0;
 
-        sectionHeader = PTR_ADD_OFFSET(IMAGE_FIRST_SECTION(imageNtHeader), UInt32x32To64(sizeof(IMAGE_SECTION_HEADER), i));
+        sectionHeader = PTR_ADD_OFFSET(IMAGE_FIRST_SECTION(imageNtHeader), UInt32x32To64(IMAGE_SIZEOF_SECTION_HEADER, i));
         sectionHeaderAddress = PTR_ADD_OFFSET(BaseAddress, sectionHeader->VirtualAddress);
         sectionHeaderSize = sectionHeader->SizeOfRawData;
 
@@ -2444,10 +2460,10 @@ NTSTATUS PhLoaderEntryRelocateImage(
         if (FlagOn(sectionHeader->Characteristics, IMAGE_SCN_MEM_WRITE) && FlagOn(sectionHeader->Characteristics, IMAGE_SCN_MEM_EXECUTE))
             sectionProtection = PAGE_EXECUTE_READWRITE;
 
-        status = NtProtectVirtualMemory(
+        status = PhProtectVirtualMemory(
             NtCurrentProcess(),
-            &sectionHeaderAddress,
-            &sectionHeaderSize,
+            sectionHeaderAddress,
+            sectionHeaderSize,
             sectionProtection,
             &sectionProtectionJunk
             );
@@ -2521,43 +2537,36 @@ PPH_STRING PhGetExportNameFromOrdinal(
 }
 
 NTSTATUS PhLoaderEntryLoadDll(
-    _In_ PPH_STRINGREF FileName,
+    _In_ PCPH_STRINGREF FileName,
+    _In_opt_ HANDLE RootDirectory,
     _Out_ PVOID* BaseAddress
     )
 {
     NTSTATUS status;
     HANDLE fileHandle;
-    OBJECT_ATTRIBUTES sectionAttributes;
     HANDLE sectionHandle;
     PVOID imageBaseAddress;
-    SIZE_T imageBaseOffset;
+    SIZE_T imageBaseSize;
 
-
-    status = PhCreateFile(
+    status = PhCreateFileEx(
         &fileHandle,
         FileName,
         FILE_READ_DATA | FILE_EXECUTE | SYNCHRONIZE,
+        RootDirectory,
+        NULL,
         FILE_ATTRIBUTE_NORMAL,
         FILE_SHARE_READ,
         FILE_OPEN,
-        FILE_NON_DIRECTORY_FILE | FILE_SYNCHRONOUS_IO_NONALERT
+        FILE_NON_DIRECTORY_FILE | FILE_SYNCHRONOUS_IO_NONALERT,
+        NULL
         );
 
     if (!NT_SUCCESS(status))
         return status;
 
-    InitializeObjectAttributes(
-        &sectionAttributes,
-        NULL,
-        OBJ_EXCLUSIVE,
-        NULL,
-        NULL
-        );
-
-    status = NtCreateSection(
+    status = PhCreateSection(
         &sectionHandle,
         SECTION_QUERY | SECTION_MAP_READ | SECTION_MAP_EXECUTE,
-        &sectionAttributes,
         NULL,
         PAGE_EXECUTE,
         SEC_IMAGE,
@@ -2569,7 +2578,7 @@ NTSTATUS PhLoaderEntryLoadDll(
     if (!NT_SUCCESS(status))
         return status;
 
-    status = PhpLoaderEntryQuerySectionInformation(
+    status = PhLoaderEntryIsSectionImageExecutable(
         sectionHandle
         );
 
@@ -2580,16 +2589,15 @@ NTSTATUS PhLoaderEntryLoadDll(
     }
 
     imageBaseAddress = NULL;
-    imageBaseOffset = 0;
+    imageBaseSize = 0;
 
-    status = NtMapViewOfSection(
+    status = PhMapViewOfSection(
         sectionHandle,
         NtCurrentProcess(),
         &imageBaseAddress,
         0,
-        0,
         NULL,
-        &imageBaseOffset,
+        &imageBaseSize,
         ViewUnmap,
         0,
         PAGE_EXECUTE
@@ -2599,9 +2607,7 @@ NTSTATUS PhLoaderEntryLoadDll(
 
     if (status == STATUS_IMAGE_NOT_AT_BASE)
     {
-        status = PhLoaderEntryRelocateImage(
-            imageBaseAddress
-            );
+        status = PhLoaderEntryRelocateImage(imageBaseAddress);
     }
 
     if (NT_SUCCESS(status))
@@ -2613,10 +2619,7 @@ NTSTATUS PhLoaderEntryLoadDll(
     }
     else
     {
-        NtUnmapViewOfSection(
-            NtCurrentProcess(),
-            imageBaseAddress
-            );
+        PhUnmapViewOfSection(NtCurrentProcess(), imageBaseAddress);
     }
 
     return status;
@@ -2650,7 +2653,7 @@ NTSTATUS PhLoaderEntryUnloadDll(
     if (!imageEntryRoutine(BaseAddress, DLL_PROCESS_DETACH, NULL))
         status = STATUS_DLL_INIT_FAILED;
 
-    NtUnmapViewOfSection(NtCurrentProcess(), BaseAddress);
+    PhUnmapViewOfSection(NtCurrentProcess(), BaseAddress);
 
     return status;
 }
@@ -2697,7 +2700,8 @@ NTSTATUS PhLoadAllImportsForDll(
 }
 
 NTSTATUS PhLoadPluginImage(
-    _In_ PPH_STRINGREF FileName,
+    _In_ PCPH_STRINGREF FileName,
+    _In_opt_ HANDLE RootDirectory,
     _Out_opt_ PVOID *BaseAddress
     )
 {
@@ -2710,8 +2714,10 @@ NTSTATUS PhLoadPluginImage(
     UNICODE_STRING imageFileName;
     ULONG imageType;
 
+    if (!PhStringRefToUnicodeString(FileName, &imageFileName))
+        return STATUS_NAME_TOO_LONG;
+
     imageType = IMAGE_FILE_EXECUTABLE_IMAGE;
-    PhStringRefToUnicodeString(FileName, &imageFileName);
 
     status = LdrLoadDll(
         NULL,
@@ -2720,14 +2726,22 @@ NTSTATUS PhLoadPluginImage(
         &imageBaseAddress
         );
 #else
+    PhAcquireLoaderLock();
+
     status = PhLoaderEntryLoadDll(
         FileName,
+        RootDirectory,
         &imageBaseAddress
         );
 #endif
 
     if (!NT_SUCCESS(status))
+    {
+#if !defined(PH_NATIVE_PLUGIN_IMAGE_LOAD)
+        PhReleaseLoaderLock();
+#endif
         return status;
+    }
 
     status = PhGetLoaderEntryImageNtHeaders(
         imageBaseAddress,
@@ -2786,6 +2800,10 @@ CleanupExit:
 #endif
     }
 
+#if !defined(PH_NATIVE_PLUGIN_IMAGE_LOAD)
+    PhReleaseLoaderLock();
+#endif
+
     return status;
 }
 
@@ -2801,7 +2819,9 @@ NTSTATUS PhGetFileBinaryTypeWin32(
     UNICODE_STRING fileName;
     IO_STATUS_BLOCK ioStatusBlock;
     OBJECT_ATTRIBUTES objectAttributes;
-    SECTION_IMAGE_INFORMATION section = { 0 };
+    SECTION_IMAGE_INFORMATION section;
+
+    RtlZeroMemory(&section, sizeof(SECTION_IMAGE_INFORMATION));
 
     status = PhDosLongPathNameToNtPathNameWithStatus(
         FileName,
@@ -2832,19 +2852,10 @@ NTSTATUS PhGetFileBinaryTypeWin32(
 
     if (!NT_SUCCESS(status))
         goto CleanupExit;
-    
-    InitializeObjectAttributes(
-        &objectAttributes,
-        NULL,
-        0,
-        NULL,
-        NULL
-        );
 
-    status = NtCreateSection(
+    status = PhCreateSection(
         &sectionHandle,
         SECTION_QUERY | SECTION_MAP_READ | SECTION_MAP_EXECUTE,
-        &objectAttributes,
         NULL,
         PAGE_EXECUTE,
         SEC_IMAGE,
@@ -2931,4 +2942,204 @@ CleanupExit:
     }
 
     return status;
+}
+
+/**
+ * Converts a system DLL init block from the current OS version layout to the latest layout.
+ *
+ * \param[in] Source A buffer returned or copied from LdrSystemDllInitBlock.
+ * \param[out] Destination A buffer for storing a version-independent copy of the structure.
+ */
+NTSTATUS PhCaptureSystemDllInitBlock(
+    _In_ PVOID Source,
+    _Out_ PPS_SYSTEM_DLL_INIT_BLOCK Destination
+    )
+{
+    ULONG sourceSize;
+
+    RtlZeroMemory(Destination, sizeof(PS_SYSTEM_DLL_INIT_BLOCK));
+
+    if (WindowsVersion >= WINDOWS_10_20H1)
+    {
+        PPS_SYSTEM_DLL_INIT_BLOCK_V3 source = (PPS_SYSTEM_DLL_INIT_BLOCK_V3)Source;
+
+        sourceSize = source->Size;
+
+        if (sourceSize > sizeof(PS_SYSTEM_DLL_INIT_BLOCK_V3))
+            sourceSize = sizeof(PS_SYSTEM_DLL_INIT_BLOCK_V3);
+
+        // No adjustments necessary for the latest layout
+        RtlCopyMemory(Destination, source, sourceSize);
+        Destination->Size = sourceSize;
+
+        return STATUS_SUCCESS;
+    }
+    else if (WindowsVersion >= WINDOWS_10_RS2)
+    {
+        PPS_SYSTEM_DLL_INIT_BLOCK_V2 source = (PPS_SYSTEM_DLL_INIT_BLOCK_V2)Source;
+
+        sourceSize = source->Size;
+
+        if (sourceSize > sizeof(PS_SYSTEM_DLL_INIT_BLOCK_V2))
+            sourceSize = sizeof(PS_SYSTEM_DLL_INIT_BLOCK_V2);
+
+        // Everything up to and including Flags uses the same layout
+        if (RTL_CONTAINS_FIELD(source, sourceSize, Flags))
+        {
+            RtlCopyMemory(
+                Destination,
+                source,
+                RTL_SIZEOF_THROUGH_FIELD(PS_SYSTEM_DLL_INIT_BLOCK_V2, Flags)
+                );
+
+            Destination->Size = RTL_SIZEOF_THROUGH_FIELD(PS_SYSTEM_DLL_INIT_BLOCK, Flags);
+        }
+
+        // Mitigation options include 2 out of 3 values
+        if (RTL_CONTAINS_FIELD(source, sourceSize, MitigationOptionsMap))
+        {
+            Destination->MitigationOptionsMap.Map[0] = source->MitigationOptionsMap.Map[0];
+            Destination->MitigationOptionsMap.Map[1] = source->MitigationOptionsMap.Map[1];
+            Destination->Size = RTL_SIZEOF_THROUGH_FIELD(PS_SYSTEM_DLL_INIT_BLOCK, MitigationOptionsMap.Map[1]);
+        }
+
+        // The subsequent fields are shifted
+        if (RTL_CONTAINS_FIELD(source, sourceSize, CfgBitMap))
+        {
+            Destination->CfgBitMap = source->CfgBitMap;
+            Destination->Size = RTL_SIZEOF_THROUGH_FIELD(PS_SYSTEM_DLL_INIT_BLOCK, CfgBitMap);
+        }
+
+        if (RTL_CONTAINS_FIELD(source, sourceSize, CfgBitMapSize))
+        {
+            Destination->CfgBitMapSize = source->CfgBitMapSize;
+            Destination->Size = RTL_SIZEOF_THROUGH_FIELD(PS_SYSTEM_DLL_INIT_BLOCK, CfgBitMapSize);
+        }
+
+        if (RTL_CONTAINS_FIELD(source, sourceSize, Wow64CfgBitMap))
+        {
+            Destination->Wow64CfgBitMap = source->Wow64CfgBitMap;
+            Destination->Size = RTL_SIZEOF_THROUGH_FIELD(PS_SYSTEM_DLL_INIT_BLOCK, Wow64CfgBitMap);
+        }
+
+        if (RTL_CONTAINS_FIELD(source, sourceSize, Wow64CfgBitMapSize))
+        {
+            Destination->Wow64CfgBitMapSize = source->Wow64CfgBitMapSize;
+            Destination->Size = RTL_SIZEOF_THROUGH_FIELD(PS_SYSTEM_DLL_INIT_BLOCK, Wow64CfgBitMapSize);
+        }
+
+        // Mitigation audit options include 2 out of 3 values
+        if (RTL_CONTAINS_FIELD(source, sourceSize, MitigationAuditOptionsMap))
+        {
+            Destination->MitigationAuditOptionsMap.Map[0] = source->MitigationAuditOptionsMap.Map[0];
+            Destination->MitigationAuditOptionsMap.Map[1] = source->MitigationAuditOptionsMap.Map[1];
+            Destination->Size = RTL_SIZEOF_THROUGH_FIELD(PS_SYSTEM_DLL_INIT_BLOCK, MitigationAuditOptionsMap.Map[1]);
+        }
+
+        return STATUS_SUCCESS;
+    }
+    else if (WindowsVersion >= PHNT_WINDOWS_8)
+    {
+        PPS_SYSTEM_DLL_INIT_BLOCK_V1 source = (PPS_SYSTEM_DLL_INIT_BLOCK_V1)Source;
+
+        sourceSize = source->Size;
+
+        if (sourceSize > sizeof(PS_SYSTEM_DLL_INIT_BLOCK_V1))
+            sourceSize = sizeof(PS_SYSTEM_DLL_INIT_BLOCK_V1);
+
+        // All fields are shifted
+        if (RTL_CONTAINS_FIELD(source, sourceSize, SystemDllWowRelocation))
+        {
+            Destination->SystemDllWowRelocation = source->SystemDllWowRelocation;
+            Destination->Size = RTL_SIZEOF_THROUGH_FIELD(PS_SYSTEM_DLL_INIT_BLOCK, SystemDllWowRelocation);
+        }
+
+        if (RTL_CONTAINS_FIELD(source, sourceSize, SystemDllNativeRelocation))
+        {
+            Destination->SystemDllNativeRelocation = source->SystemDllNativeRelocation;
+            Destination->Size = RTL_SIZEOF_THROUGH_FIELD(PS_SYSTEM_DLL_INIT_BLOCK, SystemDllNativeRelocation);
+        }
+
+        if (RTL_CONTAINS_FIELD(source, sourceSize, Wow64SharedInformation))
+        {
+            RtlCopyMemory(
+                &Destination->Wow64SharedInformation,
+                &source->Wow64SharedInformation,
+                RTL_FIELD_SIZE(PS_SYSTEM_DLL_INIT_BLOCK_V1, Wow64SharedInformation)
+                );
+
+            Destination->Size = RTL_SIZEOF_THROUGH_FIELD(PS_SYSTEM_DLL_INIT_BLOCK, Wow64SharedInformation);
+        }
+
+        if (RTL_CONTAINS_FIELD(source, sourceSize, RngData))
+        {
+            Destination->RngData = source->RngData;
+            Destination->Size = RTL_SIZEOF_THROUGH_FIELD(PS_SYSTEM_DLL_INIT_BLOCK, RngData);
+        }
+
+        if (RTL_CONTAINS_FIELD(source, sourceSize, Flags))
+        {
+            Destination->Flags = source->Flags;
+            Destination->Size = RTL_SIZEOF_THROUGH_FIELD(PS_SYSTEM_DLL_INIT_BLOCK, Flags);
+        }
+
+        // Mitigation options include 1 out of 3 values
+        if (RTL_CONTAINS_FIELD(source, sourceSize, MitigationOptions))
+        {
+            Destination->MitigationOptionsMap.Map[0] = source->MitigationOptions;
+            Destination->Size = RTL_SIZEOF_THROUGH_FIELD(PS_SYSTEM_DLL_INIT_BLOCK, MitigationOptionsMap.Map[0]);
+        }
+
+        if (RTL_CONTAINS_FIELD(source, sourceSize, CfgBitMap))
+        {
+            Destination->CfgBitMap = source->CfgBitMap;
+            Destination->Size = RTL_SIZEOF_THROUGH_FIELD(PS_SYSTEM_DLL_INIT_BLOCK, CfgBitMap);
+        }
+
+        if (RTL_CONTAINS_FIELD(source, sourceSize, CfgBitMapSize))
+        {
+            Destination->CfgBitMapSize = source->CfgBitMapSize;
+            Destination->Size = RTL_SIZEOF_THROUGH_FIELD(PS_SYSTEM_DLL_INIT_BLOCK, CfgBitMapSize);
+        }
+
+        if (RTL_CONTAINS_FIELD(source, sourceSize, Wow64CfgBitMap))
+        {
+            Destination->Wow64CfgBitMap = source->Wow64CfgBitMap;
+            Destination->Size = RTL_SIZEOF_THROUGH_FIELD(PS_SYSTEM_DLL_INIT_BLOCK, Wow64CfgBitMap);
+        }
+
+        if (RTL_CONTAINS_FIELD(source, sourceSize, Wow64CfgBitMapSize))
+        {
+            Destination->Wow64CfgBitMapSize = source->Wow64CfgBitMapSize;
+            Destination->Size = RTL_SIZEOF_THROUGH_FIELD(PS_SYSTEM_DLL_INIT_BLOCK, Wow64CfgBitMapSize);
+        }
+
+        return STATUS_SUCCESS;
+    }
+
+    return STATUS_NOT_SUPPORTED;
+}
+
+/**
+ * Retrieves a copy of the system DLL init block of the current process.
+ *
+ * \param[out] SystemDllInitBlock A buffer for storing a version-independent copy of LdrSystemDllInitBlock.
+ *
+ * \return Successful or errant status.
+ */
+NTSTATUS PhGetSystemDllInitBlock(
+    _Out_ PPS_SYSTEM_DLL_INIT_BLOCK SystemDllInitBlock
+    )
+{
+    PVOID systemDllInitBlock;
+
+    if (!LdrSystemDllInitBlock_Import())
+        return STATUS_PROCEDURE_NOT_FOUND;
+
+    systemDllInitBlock = LdrSystemDllInitBlock_Import();
+
+    if (!systemDllInitBlock)
+        return STATUS_NOT_SUPPORTED;
+
+    return PhCaptureSystemDllInitBlock(systemDllInitBlock, SystemDllInitBlock);
 }

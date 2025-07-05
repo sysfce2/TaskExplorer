@@ -166,8 +166,8 @@ void CRunAsDialog::accept()
 			PH_CREATE_PROCESS_WITH_PROFILE | (createSuspended ? PH_CREATE_PROCESS_SUSPENDED : 0),
 			NULL,
 			NULL,
-			NULL
-			);
+			NULL,
+			NULL);
 
 		if (domainPart) PhDereferenceObject(domainPart);
 		if (userPart) PhDereferenceObject(userPart);

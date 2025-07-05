@@ -85,24 +85,37 @@ VOID FASTCALL PhpfWakeQueuedLockEx(
 static HANDLE PhQueuedLockKeyedEventHandle;
 static ULONG PhQueuedLockSpinCount = 2000;
 
-BOOLEAN PhQueuedLockInitialization(
+NTSTATUS PhQueuedLockInitialization(
     VOID
     )
 {
-    if (!NT_SUCCESS(NtCreateKeyedEvent(
+    NTSTATUS status;
+    OBJECT_ATTRIBUTES objectAttributes;
+
+    InitializeObjectAttributes(
+        &objectAttributes,
+        NULL,
+        OBJ_EXCLUSIVE,
+        NULL,
+        NULL
+        );
+
+    status = NtCreateKeyedEvent(
         &PhQueuedLockKeyedEventHandle,
         KEYEDEVENT_ALL_ACCESS,
-        NULL,
+        &objectAttributes,
         0
-        )))
-        return FALSE;
+        );
+
+    if (NT_SUCCESS(status))
+        return status;
 
     if (PhSystemBasicInformation.NumberOfProcessors > 1)
         PhQueuedLockSpinCount = 4000;
     else
         PhQueuedLockSpinCount = 0;
 
-    return TRUE;
+    return status;
 }
 
 /**
@@ -939,6 +952,7 @@ VOID FASTCALL PhfPulseAllCondition(
  *
  * \remarks The associated lock must be acquired before calling the function.
  */
+_Use_decl_annotations_
 VOID FASTCALL PhfWaitForCondition(
     _Inout_ PPH_CONDITION Condition,
     _Inout_ PPH_QUEUED_LOCK Lock,

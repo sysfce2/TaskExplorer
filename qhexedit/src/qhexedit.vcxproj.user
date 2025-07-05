@@ -10,12 +10,12 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
   </PropertyGroup>
   <PropertyGroup Label="QtSettings" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <QtLastBackgroundBuild>2024-09-20T00:54:56.3670403Z</QtLastBackgroundBuild>
+    <QtLastBackgroundBuild>2025-07-03T12:25:03.7322063Z</QtLastBackgroundBuild>
     <QtTouchProperty>
     </QtTouchProperty>
   </PropertyGroup>
   <PropertyGroup Label="QtSettings" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <QtLastBackgroundBuild>2025-01-28T18:27:39.5168335Z</QtLastBackgroundBuild>
+    <QtLastBackgroundBuild>2025-07-03T12:25:09.9663367Z</QtLastBackgroundBuild>
     <QtTouchProperty>
     </QtTouchProperty>
   </PropertyGroup>
@@ -24,12 +24,12 @@
     <QtTouchProperty />
   </PropertyGroup>
   <PropertyGroup Label="QtSettings" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <QtLastBackgroundBuild>2025-01-27T07:54:00.6694877Z</QtLastBackgroundBuild>
+    <QtLastBackgroundBuild>2025-07-03T12:25:05.2595778Z</QtLastBackgroundBuild>
     <QtTouchProperty>
     </QtTouchProperty>
   </PropertyGroup>
   <PropertyGroup Label="QtSettings" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <QtLastBackgroundBuild>2025-01-28T18:27:39.3500501Z</QtLastBackgroundBuild>
+    <QtLastBackgroundBuild>2025-07-03T12:25:09.1463746Z</QtLastBackgroundBuild>
     <QtTouchProperty>
     </QtTouchProperty>
   </PropertyGroup>

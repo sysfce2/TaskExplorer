@@ -334,8 +334,8 @@ bool CWinModule::ResolveRefServices()
 
 	TAG_INFO_NAMES_REFERENCING_MODULE namesReferencingModule;
 	memset(&namesReferencingModule, 0, sizeof(TAG_INFO_NAMES_REFERENCING_MODULE));
-	namesReferencingModule.InParams.dwPid = m_ProcessId;
-	namesReferencingModule.InParams.pszModule = (wchar_t*)ModuleName.c_str();
+	namesReferencingModule.InParams.ProcessId = m_ProcessId;
+	namesReferencingModule.InParams.ModuleName = (wchar_t*)ModuleName.c_str();
 
 	ULONG win32Result = I_QueryTagInformation(NULL, eTagInfoLevelNamesReferencingModule, &namesReferencingModule);
 
@@ -345,12 +345,12 @@ bool CWinModule::ResolveRefServices()
 	if (win32Result != ERROR_SUCCESS)
 		return false;
 
-	if (!namesReferencingModule.OutParams.pmszNames)
+	if (!namesReferencingModule.OutParams.Names)
 		return false;
 
 	m_Services.clear();
 
-	PCWSTR serviceName = namesReferencingModule.OutParams.pmszNames;
+	PCWSTR serviceName = namesReferencingModule.OutParams.Names;
 	while (TRUE)
 	{
 		ULONG nameLength = (ULONG)PhCountStringZ(serviceName);
@@ -362,7 +362,7 @@ bool CWinModule::ResolveRefServices()
 		serviceName += nameLength + 1;
 	}
 
-	LocalFree((HLOCAL)namesReferencingModule.OutParams.pmszNames);
+	LocalFree((HLOCAL)namesReferencingModule.OutParams.Names);
 	
 	return true;
 }
@@ -736,7 +736,10 @@ STATUS CWinModule::Unload(bool bForce)
 
 		{
 			std::wstring Name = m_ModuleName.toStdWString();
-			status = PhUnloadDriver((PVOID)m_BaseAddress, (wchar_t*)Name.c_str());
+			PH_STRINGREF phName = PH_STRINGREF_INIT(Name.c_str());
+			std::wstring FileName = m_FileName.toStdWString();
+			PH_STRINGREF phFileName = PH_STRINGREF_INIT(FileName.c_str());
+			status = PhUnloadDriver((PVOID)m_BaseAddress, &phName, &phFileName);
 		}
 
         if (!NT_SUCCESS(status))
