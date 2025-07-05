@@ -1199,7 +1199,7 @@
     </message>
     <message>
         <source>Freeze</source>
-        <translation>冷冻</translation>
+        <translation>冻结</translation>
     </message>
     <message>
         <source>Unfreeze</source>
@@ -1255,7 +1255,7 @@
     </message>
     <message>
         <source>Failed to freeze job.</source>
-        <translation>不能冷冻Job.</translation>
+        <translation>不能冻结Job.</translation>
     </message>
     <message>
         <source>Failed to un freeze job.</source>
@@ -2467,7 +2467,7 @@ Modifiers:<byte value="xd"/>
     </message>
     <message>
         <source>Freeze</source>
-        <translation>冷冻</translation>
+        <translation>冻结</translation>
     </message>
     <message>
         <source>UnFreeze</source>
@@ -6418,11 +6418,11 @@ A 64-bit dump will be created instead.</source>
     </message>
     <message>
         <source>Job freezing is only available on windows 8 and later</source>
-        <translation>Job冷冻仅在Windows8及之后版本中可用</translation>
+        <translation>Job冻结仅在Windows8及之后版本中可用</translation>
     </message>
     <message>
         <source>Failed to (un)freeze job</source>
-        <translation>不能冷冻(解冻)Job</translation>
+        <translation>不能冻结(解冻)Job</translation>
     </message>
     <message>
         <source>Unable to add the process to the job</source>
@@ -6999,7 +6999,7 @@ A 64-bit dump will be created instead.</source>
     </message>
     <message>
         <source>Frozen</source>
-        <translation>冷冻的</translation>
+        <translation>冻结的</translation>
     </message>
     <message>
         <source>Background</source>
@@ -7263,15 +7263,15 @@ A 64-bit dump will be created instead.</source>
     </message>
     <message>
         <source>Process already frozen</source>
-        <translation>进程已经冷冻</translation>
+        <translation>进程已经冻结</translation>
     </message>
     <message>
         <source>Failed to freeze process</source>
-        <translation>不能冷冻进程</translation>
+        <translation>不能冻结进程</translation>
     </message>
     <message>
         <source>Process is not frozen</source>
-        <translation>进程并未冷冻</translation>
+        <translation>进程并未冻结</translation>
     </message>
     <message>
         <source>Failed to un-freeze process</source>
